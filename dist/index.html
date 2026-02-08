@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src 'self' https://fonts.gstatic.com;
+               connect-src 'self' https://generativelanguage.googleapis.com https://api.openai.com https://api.anthropic.com;
+               img-src 'self' data: blob:;
+               object-src 'none';
+               base-uri 'self';
+               form-action 'self';"
+    />
+    <meta
+      name="description"
+      content="MindMapper — A node-based mind mapping tool with circuit board aesthetics. Connect your ideas like a circuit board."
+    />
+    <title>MindMapper — Circuit Board Mind Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/index-Cg6XXPs3.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BK6XVhYt.css">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Toolbar -->
+      <header id="toolbar" class="toolbar glass-panel">
+        <div class="toolbar-brand">
+          <svg
+            class="brand-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              cx="6"
+              cy="6"
+              r="2.5"
+              stroke="var(--accent-cyan)"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="18"
+              cy="6"
+              r="2.5"
+              stroke="var(--accent-magenta)"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="6"
+              cy="18"
+              r="2.5"
+              stroke="var(--accent-green)"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="18"
+              cy="18"
+              r="2.5"
+              stroke="var(--accent-cyan)"
+              stroke-width="1.5"
+            />
+            <line
+              x1="8.5"
+              y1="6"
+              x2="15.5"
+              y2="6"
+              stroke="var(--accent-cyan)"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <line
+              x1="6"
+              y1="8.5"
+              x2="6"
+              y2="15.5"
+              stroke="var(--accent-green)"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <line
+              x1="18"
+              y1="8.5"
+              x2="18"
+              y2="15.5"
+              stroke="var(--accent-cyan)"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <line
+              x1="8.5"
+              y1="18"
+              x2="15.5"
+              y2="18"
+              stroke="var(--accent-green)"
+              stroke-width="1"
+              opacity="0.6"
+            />
+          </svg>
+          <span class="brand-text">MindMapper</span>
+          <span class="toolbar-divider-dot">·</span>
+          <span id="project-title" class="project-title" title="Untitled">Untitled</span>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-file-menu-wrap">
+          <button id="btn-file-menu" class="toolbar-btn" title="File Menu">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 4h12M3 9h12M3 14h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            <span>File</span>
+            <svg class="file-menu-caret" width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M3 4l2 2.5L7 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div id="file-menu-dropdown" class="file-menu-dropdown"></div>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-actions">
+          <button
+            id="btn-add-node"
+            class="toolbar-btn"
+            title="Add Node (Double-click canvas)"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <line
+                x1="9"
+                y1="3"
+                x2="9"
+                y2="15"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <line
+                x1="3"
+                y1="9"
+                x2="15"
+                y2="9"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>Add Node</span>
+          </button>
+          <button
+            id="btn-ai-generate"
+            class="toolbar-btn"
+            title="AI Generate Mind Map (Ctrl+Shift+I)"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 1l1.8 5.2H16l-4.2 3.1 1.6 5.1L9 11.3 4.6 14.4l1.6-5.1L2 6.2h5.2L9 1z"
+                stroke="var(--accent-cyan)"
+                stroke-width="1.1"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <circle cx="9" cy="9" r="2" fill="var(--accent-green)" opacity="0.5" />
+            </svg>
+            <span>AI Generate</span>
+          </button>
+          <button
+            id="btn-presets"
+            class="toolbar-btn"
+            title="Templates & Presets"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <rect x="11" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <rect x="2" y="11" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <rect x="11" y="11" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+            <span>Templates</span>
+          </button>
+          <button
+            id="btn-delete"
+            class="toolbar-btn"
+            title="Delete Selected (Del)"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M4 5h10M7 5V4a1 1 0 011-1h2a1 1 0 011 1v1m1 0v9a1 1 0 01-1 1H6a1 1 0 01-1-1V5h8z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Delete</span>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button id="btn-undo" class="toolbar-btn" title="Undo (Ctrl+Z)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M5 8l-3 3 3 3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 11h10a4 4 0 000-8H8"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="btn-redo" class="toolbar-btn" title="Redo (Ctrl+Y)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M13 8l3 3-3 3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M16 11H6a4 4 0 010-8h4"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button id="btn-zoom-in" class="toolbar-btn" title="Zoom In">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle
+                cx="8"
+                cy="8"
+                r="5"
+                stroke="currentColor"
+                stroke-width="1.2"
+              />
+              <line
+                x1="12"
+                y1="12"
+                x2="16"
+                y2="16"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="6"
+                y1="8"
+                x2="10"
+                y2="8"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="8"
+                y1="6"
+                x2="8"
+                y2="10"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <span id="zoom-level" class="zoom-display">100%</span>
+          <button id="btn-zoom-out" class="toolbar-btn" title="Zoom Out">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle
+                cx="8"
+                cy="8"
+                r="5"
+                stroke="currentColor"
+                stroke-width="1.2"
+              />
+              <line
+                x1="12"
+                y1="12"
+                x2="16"
+                y2="16"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="6"
+                y1="8"
+                x2="10"
+                y2="8"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <button id="btn-zoom-fit" class="toolbar-btn" title="Zoom to Fit">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect
+                x="3"
+                y="3"
+                width="12"
+                height="12"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.2"
+              />
+              <path
+                d="M3 7V3h4M14 3h-3M3 11v4h4M11 17h4v-4"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+          <div class="toolbar-divider"></div>
+          <button
+            id="btn-clean-layout"
+            class="toolbar-btn"
+            title="Clean Layout — auto-arrange nodes into a balanced tree"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 2v4M9 6H4M9 6h5M4 6v3M14 6v3M4 9h2M14 9h-2M5 9v3M13 9v3"
+                stroke="var(--accent-cyan)"
+                stroke-width="1.3"
+                stroke-linecap="round"
+              />
+              <circle cx="9" cy="2" r="1.2" fill="var(--accent-cyan)" />
+              <circle cx="4" cy="9" r="1" fill="var(--accent-cyan)" opacity="0.7" />
+              <circle cx="14" cy="9" r="1" fill="var(--accent-cyan)" opacity="0.7" />
+              <circle cx="5" cy="12" r="1" fill="var(--accent-cyan)" opacity="0.5" />
+              <circle cx="13" cy="12" r="1" fill="var(--accent-cyan)" opacity="0.5" />
+            </svg>
+            <span>Clean Layout</span>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button
+            id="btn-run-agents"
+            class="toolbar-btn toolbar-btn-accent"
+            title="Run Agents — execute mind map via Claude Code (desktop only)"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M5 3l10 6-10 6V3z"
+                stroke="var(--accent-green)"
+                stroke-width="1.3"
+                stroke-linejoin="round"
+                fill="var(--accent-green)"
+                fill-opacity="0.15"
+              />
+            </svg>
+            <span>Run Agents</span>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button
+            id="btn-generate-prompt"
+            class="toolbar-btn"
+            title="Generate Workflow Prompt (Ctrl+Shift+G)"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 2l5.5 3.5v7L9 16l-5.5-3.5v-7L9 2z"
+                stroke="var(--accent-cyan)"
+                stroke-width="1.2"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M6 8l2 2 4-4"
+                stroke="var(--accent-green)"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Generate Prompt</span>
+          </button>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-status">
+          <span
+            id="save-indicator"
+            class="save-indicator saved"
+            title="Auto-saved"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M3 7l3 3 5-6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Saved</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- Canvas -->
+      <div id="canvas-container" class="canvas-container">
+        <div id="canvas-viewport" class="canvas-viewport">
+          <!-- SVG layer for connections -->
+          <svg
+            id="connections-layer"
+            class="connections-layer"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <filter
+                id="glow-cyan"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                <feGaussianBlur
+                  in="SourceGraphic"
+                  stdDeviation="3"
+                  result="blur"
+                />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter
+                id="glow-magenta"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                <feGaussianBlur
+                  in="SourceGraphic"
+                  stdDeviation="3"
+                  result="blur"
+                />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <!-- Arrowhead markers -->
+              <marker
+                id="arrowhead-cyan"
+                markerWidth="10"
+                markerHeight="8"
+                refX="9"
+                refY="4"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 0 0 L 10 4 L 0 8 L 2.5 4 Z"
+                  fill="var(--accent-cyan, #00e5ff)"
+                />
+              </marker>
+              <marker
+                id="arrowhead-magenta"
+                markerWidth="10"
+                markerHeight="8"
+                refX="9"
+                refY="4"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 0 0 L 10 4 L 0 8 L 2.5 4 Z"
+                  fill="var(--accent-magenta, #ff2d78)"
+                />
+              </marker>
+              <!-- Reverse arrowhead markers (for marker-start / bidirectional) -->
+              <marker
+                id="arrowhead-start-cyan"
+                markerWidth="10"
+                markerHeight="8"
+                refX="1"
+                refY="4"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 10 0 L 0 4 L 10 8 L 7.5 4 Z"
+                  fill="var(--accent-cyan, #00e5ff)"
+                />
+              </marker>
+              <marker
+                id="arrowhead-start-magenta"
+                markerWidth="10"
+                markerHeight="8"
+                refX="1"
+                refY="4"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 10 0 L 0 4 L 10 8 L 7.5 4 Z"
+                  fill="var(--accent-magenta, #ff2d78)"
+                />
+              </marker>
+            </defs>
+          </svg>
+          <!-- Node layer -->
+          <div id="nodes-layer" class="nodes-layer"></div>
+        </div>
+      </div>
+
+      <!-- Context Menu -->
+      <div
+        id="context-menu"
+        class="context-menu glass-panel"
+        style="display: none"
+      >
+        <ul id="context-menu-items"></ul>
+      </div>
+
+      <!-- Property Panel -->
+      <aside
+        id="property-panel"
+        class="property-panel glass-panel"
+        style="display: none"
+      >
+        <div class="panel-header">
+          <h3>Properties</h3>
+          <button id="btn-close-panel" class="panel-close" title="Close">
+            &times;
+          </button>
+        </div>
+        <div class="panel-body">
+          <label class="panel-label" for="prop-text">Label</label>
+          <textarea
+            id="prop-text"
+            class="panel-input"
+            rows="3"
+            placeholder="Node text..."
+          ></textarea>
+          <label class="panel-label">Color</label>
+          <div id="color-picker" class="color-picker">
+            <button
+              class="color-swatch"
+              data-color="#00e5ff"
+              style="background: #00e5ff"
+              title="Cyan"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#ff2d78"
+              style="background: #ff2d78"
+              title="Magenta"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#00ff88"
+              style="background: #00ff88"
+              title="Green"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#ffc107"
+              style="background: #ffc107"
+              title="Amber"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#7c4dff"
+              style="background: #7c4dff"
+              title="Purple"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#ff6e40"
+              style="background: #ff6e40"
+              title="Orange"
+            ></button>
+            <button
+              class="color-swatch"
+              data-color="#e6edf3"
+              style="background: #e6edf3"
+              title="White"
+            ></button>
+          </div>
+          <div class="panel-meta">
+            <span class="meta-label">ID</span>
+            <span id="prop-id" class="meta-value">—</span>
+            <span class="meta-label">Position</span>
+            <span id="prop-pos" class="meta-value">—</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MiniMap -->
+      <div id="minimap" class="minimap glass-panel">
+        <canvas id="minimap-canvas" width="180" height="120"></canvas>
+      </div>
+
+      <!-- Help hint -->
+      <div id="help-hint" class="help-hint">
+        <span>Double-click to add a node</span>
+        <span class="hint-divider">·</span>
+        <span>Drag ports to connect</span>
+        <span class="hint-divider">·</span>
+        <span>Space + drag to pan</span>
+      </div>
+    </div>
+
+    <!-- Preset Modal -->
+    <div id="preset-modal-overlay" class="preset-modal-overlay">
+      <div id="preset-modal" class="preset-modal glass-panel">
+        <div class="preset-modal-header">
+          <h2>⚡ Project Templates</h2>
+          <button id="preset-modal-close" class="preset-modal-close" title="Close">✕</button>
+        </div>
+        <div id="preset-category-filter" class="preset-category-filter">
+          <button class="preset-cat-pill active" data-category="all">All</button>
+          <button class="preset-cat-pill" data-category="mobile">📱 Mobile</button>
+          <button class="preset-cat-pill" data-category="desktop">🖥️ Desktop</button>
+          <button class="preset-cat-pill" data-category="web">🌐 Web</button>
+          <button class="preset-cat-pill" data-category="saas">☁️ SaaS</button>
+          <button class="preset-cat-pill" data-category="custom">📌 My Presets</button>
+        </div>
+        <div id="preset-grid" class="preset-grid"></div>
+        <div class="preset-modal-footer">
+          <button id="preset-save-current" class="preset-save-btn">
+            <span>💾</span> Save Current Canvas as Template
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
