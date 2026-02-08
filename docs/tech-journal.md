@@ -4,6 +4,58 @@ Chronological log of design decisions, trade-offs, and resolutions.
 
 ---
 
+## 2026-02-08 — Agent Organizational Structure & Communication Protocol
+
+### Decision: Formal org chart metadata on every agent role
+
+**Context**: The virtual team had 10+ agent roles, but no explicit reporting lines. Agents knew their responsibilities but not who they reported to or who reported to them. Communication was implied, not structured.
+**Decision**: Add `reports_to`, `receives_reports_from`, `distributes_to`, and `reporting_mandate` metadata to every agent role definition in `WorkflowPromptGenerator.js`.
+**Rationale**: Explicit reporting lines create accountability. When Devil's Advocate finds a quality issue, the prompt now explicitly says "report to COO" — and the COO's role explicitly says "receive DA findings and create agent-specific task lists." This bidirectional wiring ensures the executing agent (Claude Code) doesn't silently drop quality feedback.
+**Trade-off**: More metadata in the generated prompt means more tokens consumed. Acceptable because the reporting structure is essential context that directly affects output quality.
+
+### Decision: Replace Research Agent with Deep Researcher / Knowledge Architect
+
+**Context**: The original Research Agent was a lightweight "quick question" role — "should we use library X or Y?" It ran reactively when agents hit blocks, and its output was verbal/inline (not persisted).
+**Decision**: Replace with a Deep Researcher who front-loads knowledge before each milestone, produces structured reference docs in `/docs/knowledge/`, and routes agent-specific documentation packages to each team member.
+**Rationale**: AI agents work from training data, which is inherently stale. A Deep Researcher that reads current API docs, changelogs, and migration guides gives the team an "unfair advantage" — they're working from current, verified information, not stale assumptions. Front-loaded research prevents the most expensive kind of rework: building on incorrect assumptions about an API's behavior.
+**Key innovation**: The "distribution mandate" — Deep Researcher doesn't just publish to a folder, they actively route specific docs to specific agents. Frontend gets UI framework docs, backend gets API docs, DevOps gets infrastructure docs. Each agent becomes an expert in their specific task.
+
+### Decision: Executive suite retrospective debate (not top-down mandates)
+
+**Context**: The Project Auditor needed a reporting target for retrospective findings. Options: report to COO only, report to CTO only, or report to the full executive suite.
+**Decision**: Project Auditor presents findings to ALL THREE executives (COO + CTO + CFO) simultaneously. They debate in the open — COO evaluates operational impact, CTO evaluates technical implications, CFO evaluates cost impact. Together they decide which suggestions are strongest.
+**Rationale**: Top-down mandates from a single executive create blind spots. The COO might implement a process change that the CTO knows is technically infeasible. The CTO might propose a technical improvement that the CFO knows is cost-prohibitive. Three-way debate surfaces conflicts BEFORE they become problems. This mirrors real executive team dynamics where cross-functional decisions require multi-perspective input.
+**Alternative rejected**: Having Project Auditor report only to COO. This would miss the CTO's technical perspective and the CFO's cost perspective on improvement proposals.
+
+### Decision: Devil's Advocate as active quality champion (not passive reviewer)
+
+**Context**: The original Devil's Advocate ran "after milestones" — a post-hoc review. Quality issues were found late and required expensive rework.
+**Decision**: Expand DA to actively challenge methods AND results throughout the build cycle. DA observes during Active Build, raises concerns in real-time, and produces structured quality findings that flow to COO → agent-specific task lists.
+**Rationale**: The DA → COO → Agent pipeline ensures no quality finding is lost. The COO acts as a dispatcher, routing each finding to the specific agent responsible. This is more effective than a "general quality report" that no one agent owns. Additionally, challenging METHODS (not just results) catches architectural mistakes early — before they're baked into the codebase.
+**Quality bar**: The DA's mandate now explicitly says: "If something is 'good enough', ask: 'How do we make it great?'" This pushes the quality ceiling higher than simple defect detection.
+
+### Decision: CFO as creative cost optimizer (not just budget tracker)
+
+**Context**: The original CFO tracked costs and flagged overruns. This is reactive — by the time you flag an overrun, the money is already spent.
+**Decision**: Reframe CFO as a creative strategist whose philosophy is "High quality, low cost — always. These are NOT opposing forces." Embed specific cost reduction strategies (batching, caching, pattern reuse, front-loaded research, right-sized tiers) as first-class instructions.
+**Rationale**: The best cost optimization is not cutting corners — it's finding cleverer ways to achieve the same quality. A CFO who proposes "skip testing to save tokens" is bad. A CFO who proposes "reuse the component pattern from milestone 1 instead of designing from scratch" is invaluable. The embedded strategies give the executing agent concrete tactics rather than abstract "reduce costs" directives.
+**Reporting chain**: CFO → CTO ensures cost optimizations are validated for technical soundness before implementation. This prevents the scenario where cost cuts silently degrade quality.
+
+### Decision: Mandatory inter-agent communication during Active Build
+
+**Context**: In earlier versions, agents worked independently during the Build phase and only communicated at review checkpoints. This created "silent handoff" problems — the backend agent would change an API signature, and the frontend agent wouldn't know until the review revealed a mismatch.
+**Decision**: Mandate continuous inter-agent communication during Active Build. "Backend changes API? Frontend hears immediately." Agents must actively coordinate, share decisions, and flag dependencies in real-time.
+**Rationale**: Real-time communication is cheaper than rework. If the backend agent decides to change an endpoint signature and communicates it immediately, the frontend agent adapts in-flight (cheap). If the frontend agent builds against the old signature and discovers the mismatch at review, they have to rewrite components (expensive). Key inter-agent discussions are tracked in `/docs/conversations.md`.
+**Trade-off**: More "conversation" tokens spent during the build phase. This is a net positive investment — the rework prevention far exceeds the communication cost.
+
+### Decision: 5-step milestone workflow (added Retrospective)
+
+**Context**: The previous 4-step workflow was: Kickoff → Build → Review → Sign-off. There was no structured mechanism for the team to learn from each milestone and improve the process for the next one.
+**Decision**: Add a 5th step: RETROSPECTIVE. After sign-off, the Project Auditor reviews milestone performance, and the executive suite debates improvements.
+**Rationale**: Without retrospectives, the team repeats the same mistakes across milestones. With retrospectives, each milestone actively improves on the previous one. The output of the retrospective is not just a document — it's concrete changes to the next milestone's approach, tasks, and targets. This creates a compounding quality improvement curve.
+
+---
+
 ## 2026-02-07 — Project Kickoff & Architecture Decisions
 
 ### Decision: Vite + Vanilla JS over React/Vue

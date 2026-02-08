@@ -4,6 +4,193 @@ All notable changes to this project are documented here.
 
 ---
 
+## Phase 6 — Agent Organizational Structure & Communication Protocol (2026-02-08)
+
+### 🏢 Expanded Agent Roster (10 → 15 Roles)
+
+- **3 New Agents Added:**
+  - 📚 **Deep Researcher / Knowledge Architect** — Front-loads project knowledge by reading current API docs, SDKs, and patterns. Produces structured reference material in `/docs/knowledge/`. Routes agent-specific documentation packages to each team member individually (frontend gets UI framework docs, backend gets API docs, etc.). Replaced the lightweight Research Agent with this expanded scope.
+  - 🚀 **DevOps / Infrastructure Agent** — Owns CI/CD pipelines, Dockerfiles, deployment configs, environment management, monitoring setup. Reports deployment readiness to COO at every milestone. No milestone closes without infrastructure green.
+  - 🧪 **QA / Test Agent** — Owns the full test strategy from unit to end-to-end. Tests written alongside features, not after. Reports coverage to COO. Works with Sentinel for security-focused tests.
+
+- **1 New Sub-Role Added:**
+  - 📊 **Project Auditor** (under Auditors) — Leads structured retrospectives after every milestone and at project completion. Reports findings to the full executive suite (COO + CTO + CFO) for debate and action planning.
+
+- **NodeManager.js** — Added `devops`, `qa-tester`, and `deep-researcher` to `AGENT_ROLES` constant for node assignment UI
+
+### 📊 Formal Organizational Chart & Reporting Lines
+
+- **Explicit `reports_to` metadata** added to every agent role definition in `WorkflowPromptGenerator.js`
+- **Explicit `receives_reports_from` metadata** added to hub roles (COO, CTO)
+
+**Reporting structure established:**
+
+```
+                     CEO (Human)
+                        │
+                     COO (Hub)
+               ┌────┬───┼───┬──────────┐
+               │    │   │   │          │
+            Devil's DevOps QA   Documenter
+           Advocate              │
+               │                 │ retrospective
+               ▼                 ▼ findings
+     COO creates         ┌─────────────┐
+     agent-specific      │     CTO     │
+     task lists          │  (Tech Hub) │
+                         ├──┬──────┬───┤
+                         │  │      │
+                       CFO Sentinel Deep
+                         │         Researcher
+                    ┌────┤
+                    │    │
+              Token  API Cost
+              Auditor Auditor
+                    │
+              Project Auditor → Executive Suite
+```
+
+### 🔄 Inter-Agent Communication Protocol
+
+- **All agents communicate continuously** — not just at checkpoints. Active, real-time collaboration is mandated.
+- **Backend changes API? Frontend hears immediately.** Cross-team communication happens as decisions are made.
+- **Agents TALK to each other** during the Active Build phase — DevOps coordinates with Backend on infrastructure, QA writes tests alongside Frontend, etc.
+- **Communication artifacts** tracked in `/docs/conversations.md` for key inter-agent discussions
+
+### 😈 Strengthened Devil's Advocate
+
+- **Expanded from passive reviewer to relentless quality champion**
+- **Reports ALL findings to COO** — COO creates agent-specific task lists routing each finding to the responsible agent
+- **Challenges METHODS AND RESULTS** at every milestone, not just code review
+  - Methods: "Is this the best approach? Why X over Y?"
+  - Results: "Is the UX genuinely good or just functional? Does it handle edge cases?"
+  - Quality: "Can we make this great, not just acceptable?"
+- **Quality improvement push** across ALL aspects: code, design, architecture, security, performance, documentation
+- **Quality standards enforced:**
+  - Code: Clean, readable, maintainable, well-structured
+  - Design: Meets Creative Director standards, accessible, responsive
+  - Architecture: Scalable, testable, well-separated
+  - Performance: Fast load, no unnecessary re-renders, efficient queries
+  - Documentation: Complete, accurate, onboarding-ready
+
+### 💰 Strengthened CFO — Creative Cost Optimizer
+
+- **Philosophy codified:** "High quality, low cost — always. These are NOT opposing forces."
+- **Reports budget refinements to CTO** — CTO validates that cost optimizations don't compromise quality
+- **Creative cost strategies embedded:**
+  - Batch similar operations
+  - Cache aggressively
+  - Reuse patterns across milestones
+  - Front-load research to prevent expensive rework
+  - Test early to catch bugs cheaply
+  - Prefer open-source when free alternative quality matches
+  - Right-size model tiers (Flash for boilerplate, Opus ONLY for novel architecture)
+- **Budget targets:**
+  - 70% Flash / 25% Standard / 5% Opus by call volume
+  - Alert if Opus exceeds 20% of total calls
+  - "Never sacrifice quality to save cost — find a DIFFERENT way"
+- **Cost efficiency score** presented every milestone: quality delivered per token spent
+- **Participates in executive suite retrospective debates** to shape financial improvements
+
+### 📚 Deep Researcher — Targeted Knowledge Distribution
+
+- **Distribution mandate:** Routes task-specific documentation to EACH agent individually
+  - Frontend → UI framework docs
+  - Backend → API/SDK docs
+  - DevOps → Infrastructure docs
+  - QA → Testing framework docs
+  - Sentinel → Security docs
+  - Creative → Design system references
+- **Not just a folder-publisher** — actively ensures each agent becomes an expert in THEIR task
+- **Reports to CTO** with evidence-based tech briefings and cost/benefit analysis
+
+### 🔁 Retrospective / Continuous Improvement System
+
+- **5th milestone step added:** `RETROSPECTIVE` — runs after every milestone sign-off
+- **Project Auditor leads the retrospective**, assessing:
+  - Milestone completion rate (planned vs. actual)
+  - Tech debt accumulation
+  - Documentation coverage
+  - Team efficiency patterns
+  - Process bottlenecks and handoff delays
+  - Cost efficiency trends
+- **Executive suite debate process:**
+  1. Project Auditor presents findings to COO + CTO + CFO simultaneously
+  2. COO evaluates operational impact
+  3. CTO evaluates technical implications
+  4. CFO evaluates cost impact
+  5. Executives debate openly and decide which improvements to implement
+  6. New plans and tasks incorporate improvements into the next milestone
+- **Retrospective artifacts** maintained in `/docs/retrospective.md`
+
+### 🛡️ Sentinel Reporting Line
+
+- **reports_to: CTO** — Security advisories flow to CTO for architecture-level decisions
+- **Veto power preserved** — No role can override a Sentinel security flag
+
+### 📋 5-Step Milestone Workflow (Updated from 4)
+
+1. **KICKOFF BRIEFING** — Full team plans. Deep Researcher distributes docs. DevOps confirms infra. QA defines test strategy.
+2. **ACTIVE BUILD** — Engineers execute in parallel. All agents communicate continuously. QA writes tests alongside features.
+3. **CROSS-ROLE REVIEW** — Devil's Advocate challenges everything. Reports to COO. COO creates agent-specific task lists.
+4. **SIGN-OFF** — COO, CTO, Sentinel, CFO, QA, DevOps, Documenter all confirm. CTO approves CFO budget refinements.
+5. **RETROSPECTIVE** — Project Auditor presents to executive suite. Debate. Implement improvements for next cycle.
+
+### 📁 New Documentation Artifacts
+
+| Artifact                 | Purpose                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| `/docs/decisions.md`     | Technical decisions log maintained by COO                 |
+| `/docs/conversations.md` | Key inter-agent discussion records                        |
+| `/docs/retrospective.md` | Milestone retrospectives with improvement actions         |
+| `/docs/budget-report.md` | Running cost tracking maintained by CFO                   |
+| `/docs/deployment.md`    | Infrastructure architecture and runbooks                  |
+| `/docs/tech-journal.md`  | Chronological decisions log maintained by Deep Researcher |
+| `/docs/knowledge/`       | Deep Researcher's structured reference material           |
+
+### 🧪 Verification
+
+- Syntax validation: `node -c WorkflowPromptGenerator.js` — ✅ pass
+- All new roles registered in `AGENT_ROLES` constant — ✅
+- Collaboration protocol updated for full team engagement — ✅
+- Reporting lines metadata on every agent role — ✅
+
+---
+
+## Phase 5 — Workspace Settings & GitHub Auth (2026-02-07)
+
+### ⚙️ Workspace Settings Panel
+
+- **WorkspaceSettings engine** (`src/settings/WorkspaceSettings.js`) — Persistent user preferences via localStorage, transforms to prompt-ready JSON via `toWorkspaceInstructions()`
+- **WorkspaceSettingsModal UI** (`src/ui/WorkspaceSettingsModal.js`) — Two-column modal with 6 sections: Project Location, Git & GitHub, Security, Tech Stack, Coding Conventions, Deployment
+- **Toolbar integration** — Gear icon button (`btn-workspace-settings`) added to toolbar in `index.html`
+- **Prompt pipeline wiring** — `PromptExportModal` accepts settings modal, injects workspace instructions into `generateWorkflowPrompt()` and `generateTaskJSON()`
+- **Generator fallback** — `_buildTaskDefinition()` uses settings when available, falls back to hardcoded `_buildWorkspaceInstructions()` for backward compatibility
+- **CSS** — ~170 lines for modal layout, info boxes, save indicators, field hints
+
+### 🔐 Auth-Aware Git Instructions
+
+- **Auth method selector** — Users select their local git auth method (GitHub CLI, SSH, Credential Manager, or "Not set up")
+- **Method-specific prompt output** — Generated prompts include correct remote URLs and commands per auth method
+- **Safety guard** — When auth is "Not set up", prompt explicitly tells agents NOT to attempt remote operations
+- **Info box** — Git section includes prerequisite explanation: MindMapper → prompt → Claude Code → your terminal → your auth
+- **No credentials stored** — MindMapper never handles tokens, keys, or passwords
+
+### 🛠️ GitHub CLI Setup
+
+- **Installation** — `winget install GitHub.cli`
+- **Authentication** — `gh auth login --web --git-protocol https` → device code flow
+- **Verified** — Account `El7ias`, HTTPS protocol, scopes: `gist`, `read:org`, `repo`
+
+### 🧪 Testing
+
+- Settings panel opens and auto-saves ✅
+- Settings appear in generated prompt JSON ✅
+- Full project test with real agent execution — extremely promising ✅
+- Rate-limited at ~1:50 AM, pending completion at 6 AM ⏳
+
+---
+
 ## Phase 3 — v3.0.0 (WIP)
 
 ### 🔥 Phase 3.0 — Infrastructure Foundation
@@ -87,19 +274,22 @@ All notable changes to this project are documented here.
   - Philosophy: "Never bring a bazooka to a pillow fight"
   - Routing metadata is consumed by the executing agent, invisible to MindMapper users
 
-### 👥 Phase 3.7 — Full 10-Role Virtual Team + Invisible Routing
+### 👥 Phase 3.7 — Full 15-Role Virtual Team + Invisible Routing
 
-- **Virtual Team Expansion** — `_buildVirtualTeam()` now generates 10 agent roles (up from 5):
+- **Virtual Team Expansion** — `_buildVirtualTeam()` now generates 15 agent roles (expanded from original 5):
   - 👔 **Orchestrator (COO)** — task board, milestone sequencing (standard routing)
   - 🏗️ **CTO** — architecture decisions, framework selection (deep-reasoning routing)
+  - 💰 **CFO** — budget strategy, creative cost optimization (standard routing)
   - 🎨 **Creative Director / Art Department** — visual identity, design system, branding, accessibility (standard routing)
   - 🖥️ **Front-End Agent** — UI implementation, user journeys, responsive layout (standard routing)
   - ⚙️ **Backend Agent** — APIs, data models, security rules (standard routing)
+  - 🚀 **DevOps Agent** — CI/CD, deployment, infrastructure-as-code (standard routing)
+  - 🧪 **QA / Test Agent** — test strategy, unit/integration/e2e tests (standard routing)
+  - 📚 **Deep Researcher / Knowledge Architect** — API docs, reference material, knowledge base (standard routing)
   - 🛡️ **Sentinel** — dedicated security specialist, OWASP, threat modeling (deep-reasoning routing)
-  - 📎 **Research Agent** — tech investigation, trade-off analysis (standard routing)
+  - 😈 **Devil's Advocate** — QA challenger, architecture stress-testing, quality champion (deep-reasoning routing)
   - 📝 **Documenter** — README, API docs, changelogs, migration guides (standard routing)
-  - 😈 **Devil's Advocate** — QA challenger, architecture stress-testing (deep-reasoning routing)
-  - 🔢 **Auditors** — token/API cost tracking, project health (efficient routing)
+  - 🔢 **Auditors** — token/API cost tracking, project health, retrospective (efficient routing)
 - **Invisible Routing Metadata** — All tier-specific fields renamed:
   - `model_tier` → `_routing` (underscore-prefixed internal convention)
   - `tier_rationale` → `_rationale`
