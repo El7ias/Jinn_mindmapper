@@ -324,22 +324,72 @@ export function computeLayout(nodes, connections, centerX = 0, centerY = 0) {
     adj.get(c.to)?.add(c.from);
   });
 
-  // ── 2. BFS spanning tree from root ─────────────────────────────────
-  const children = new Map();  // parent → [children]
-  const visited = new Set();
-  const queue = [0];
-  visited.add(0);
-  children.set(0, []);
+  // ── 2. Find connected components ──────────────────────────────────
+  const componentOf = new Array(N).fill(-1);
+  const components = [];  // each entry: { members: Set, root: number }
 
-  while (queue.length > 0) {
-    const cur = queue.shift();
-    for (const nb of adj.get(cur) || []) {
-      if (!visited.has(nb)) {
-        visited.add(nb);
-        if (!children.has(cur)) children.set(cur, []);
-        children.get(cur).push(nb);
-        if (!children.has(nb)) children.set(nb, []);
-        queue.push(nb);
+  for (let i = 0; i < N; i++) {
+    if (componentOf[i] !== -1) continue;
+
+    // BFS to find all members of this component
+    const compIdx = components.length;
+    const members = new Set();
+    const bfsQueue = [i];
+    componentOf[i] = compIdx;
+    members.add(i);
+
+    while (bfsQueue.length > 0) {
+      const cur = bfsQueue.shift();
+      for (const nb of adj.get(cur) || []) {
+        if (componentOf[nb] === -1) {
+          componentOf[nb] = compIdx;
+          members.add(nb);
+          bfsQueue.push(nb);
+        }
+      }
+    }
+
+    // Pick the best root for this component:
+    //   1. Prefer "general" type nodes (conceptual grouping nodes)
+    //   2. Among candidates, pick the one with highest degree (most connections)
+    //   3. Tie-break by lowest index (stability)
+    let bestRoot = i;
+    let bestScore = -1;
+    for (const m of members) {
+      const degree = adj.get(m)?.size || 0;
+      const isGeneral = nodes[m].type === 'general' ? 1000 : 0;
+      const score = isGeneral + degree;
+      if (score > bestScore || (score === bestScore && m < bestRoot)) {
+        bestScore = score;
+        bestRoot = m;
+      }
+    }
+
+    components.push({ members, root: bestRoot });
+  }
+
+  // Sort components by size (largest first) for visual prominence
+  components.sort((a, b) => b.members.size - a.members.size);
+
+  // ── 3. BFS spanning tree for each component ───────────────────────
+  const children = new Map();  // parent → [children]
+
+  for (const comp of components) {
+    const visited = new Set();
+    const queue = [comp.root];
+    visited.add(comp.root);
+    children.set(comp.root, []);
+
+    while (queue.length > 0) {
+      const cur = queue.shift();
+      for (const nb of adj.get(cur) || []) {
+        if (!visited.has(nb)) {
+          visited.add(nb);
+          if (!children.has(cur)) children.set(cur, []);
+          children.get(cur).push(nb);
+          if (!children.has(nb)) children.set(nb, []);
+          queue.push(nb);
+        }
       }
     }
   }
@@ -350,7 +400,7 @@ export function computeLayout(nodes, connections, centerX = 0, centerY = 0) {
     kids.sort((a, b) => (TYPE_ORDER[nodes[a].type] ?? 6) - (TYPE_ORDER[nodes[b].type] ?? 6));
   }
 
-  // ── 3. Compute subtree height (number of leaves) ──────────────────
+  // ── 4. Compute subtree height (number of leaves) ──────────────────
   const subtreeLeaves = new Map();
   function countLeaves(node) {
     const kids = children.get(node) || [];
@@ -360,34 +410,15 @@ export function computeLayout(nodes, connections, centerX = 0, centerY = 0) {
     subtreeLeaves.set(node, total);
     return total;
   }
-  countLeaves(0);
-
-  // ── 4. Layout constants ───────────────────────────────────────────
-  const H_GAP = 320;   // horizontal gap between depth levels
-  const V_GAP = 90;   // vertical gap between sibling nodes (leaf units)
-  const NODE_H = 56;    // approximate node height in px
-
-  // ── 5. Split root children → left half, right half ────────────────
-  const rootKids = children.get(0) || [];
-  const leftKids = [];
-  const rightKids = [];
-
-  // Balanced split: alternate by subtree size for even distribution
-  const sorted = [...rootKids].sort((a, b) => (subtreeLeaves.get(b) || 0) - (subtreeLeaves.get(a) || 0));
-  let leftWeight = 0, rightWeight = 0;
-  for (const kid of sorted) {
-    const w = subtreeLeaves.get(kid) || 1;
-    if (leftWeight <= rightWeight) {
-      leftKids.push(kid);
-      leftWeight += w;
-    } else {
-      rightKids.push(kid);
-      rightWeight += w;
-    }
+  for (const comp of components) {
+    countLeaves(comp.root);
   }
-  // Restore original order within each side
-  leftKids.sort((a, b) => rootKids.indexOf(a) - rootKids.indexOf(b));
-  rightKids.sort((a, b) => rootKids.indexOf(a) - rootKids.indexOf(b));
+
+  // ── 5. Layout constants ───────────────────────────────────────────
+  const H_GAP = 320;   // horizontal gap between depth levels
+  const V_GAP = 90;    // vertical gap between sibling nodes (leaf units)
+  const NODE_H = 56;   // approximate node height in px
+  const COMP_GAP = 160; // vertical gap between separate components
 
   // ── 6. Recursive placement ────────────────────────────────────────
   //  Places a subtree rooted at `node` starting at (startX, startY).
@@ -424,46 +455,92 @@ export function computeLayout(nodes, connections, centerX = 0, centerY = 0) {
     return cursorY - startY;
   }
 
-  // ── 7. Place left subtrees ────────────────────────────────────────
-  const leftTotalLeaves = leftKids.reduce((s, k) => s + (subtreeLeaves.get(k) || 1), 0);
-  const leftTotalHeight = leftTotalLeaves * (NODE_H + V_GAP);
-  let leftStartY = centerY - leftTotalHeight / 2;
+  /**
+   * Lay out a single component as a balanced mind map tree,
+   * placing its root at (rootX, rootY). Returns the vertical extent used.
+   */
+  function layoutComponent(comp, rootX, rootY) {
+    const root = comp.root;
 
-  for (const kid of leftKids) {
-    const extent = placeSubtree(kid, centerX - H_GAP, leftStartY, -1);
-    leftStartY += extent;
+    // Single-node component
+    if (comp.members.size === 1) {
+      positioned[root].x = rootX;
+      positioned[root].y = rootY;
+      return NODE_H + V_GAP;
+    }
+
+    // Split root children → left half, right half
+    const rootKids = children.get(root) || [];
+    const leftKids = [];
+    const rightKids = [];
+
+    // Balanced split: alternate by subtree size for even distribution
+    const sorted = [...rootKids].sort((a, b) => (subtreeLeaves.get(b) || 0) - (subtreeLeaves.get(a) || 0));
+    let leftWeight = 0, rightWeight = 0;
+    for (const kid of sorted) {
+      const w = subtreeLeaves.get(kid) || 1;
+      if (leftWeight <= rightWeight) {
+        leftKids.push(kid);
+        leftWeight += w;
+      } else {
+        rightKids.push(kid);
+        rightWeight += w;
+      }
+    }
+    // Restore original order within each side
+    leftKids.sort((a, b) => rootKids.indexOf(a) - rootKids.indexOf(b));
+    rightKids.sort((a, b) => rootKids.indexOf(a) - rootKids.indexOf(b));
+
+    // Place left subtrees
+    const leftTotalLeaves = leftKids.reduce((s, k) => s + (subtreeLeaves.get(k) || 1), 0);
+    const leftTotalHeight = leftTotalLeaves * (NODE_H + V_GAP);
+    let leftStartY = rootY - leftTotalHeight / 2;
+
+    for (const kid of leftKids) {
+      const extent = placeSubtree(kid, rootX - H_GAP, leftStartY, -1);
+      leftStartY += extent;
+    }
+
+    // Place right subtrees
+    const rightTotalLeaves = rightKids.reduce((s, k) => s + (subtreeLeaves.get(k) || 1), 0);
+    const rightTotalHeight = rightTotalLeaves * (NODE_H + V_GAP);
+    let rightStartY = rootY - rightTotalHeight / 2;
+
+    for (const kid of rightKids) {
+      const extent = placeSubtree(kid, rootX + H_GAP, rightStartY, +1);
+      rightStartY += extent;
+    }
+
+    // Place root at center
+    positioned[root].x = rootX;
+    positioned[root].y = rootY;
+
+    // Compute total vertical extent used by this component
+    let minY = Infinity, maxY = -Infinity;
+    for (const m of comp.members) {
+      if (positioned[m].y < minY) minY = positioned[m].y;
+      if (positioned[m].y > maxY) maxY = positioned[m].y;
+    }
+    return (maxY - minY) + NODE_H + V_GAP;
   }
 
-  // ── 8. Place right subtrees ───────────────────────────────────────
-  const rightTotalLeaves = rightKids.reduce((s, k) => s + (subtreeLeaves.get(k) || 1), 0);
-  const rightTotalHeight = rightTotalLeaves * (NODE_H + V_GAP);
-  let rightStartY = centerY - rightTotalHeight / 2;
+  // ── 7. Lay out each component, stacking vertically ────────────────
+  // Compute total vertical space needed
+  const compExtents = components.map(comp => {
+    const root = comp.root;
+    const totalLeaves = subtreeLeaves.get(root) || 1;
+    return totalLeaves * (NODE_H + V_GAP);
+  });
+  const totalHeight = compExtents.reduce((s, h) => s + h, 0) + (components.length - 1) * COMP_GAP;
+  let cursorY = centerY - totalHeight / 2;
 
-  for (const kid of rightKids) {
-    const extent = placeSubtree(kid, centerX + H_GAP, rightStartY, -1 * -1);
-    rightStartY += extent;
-  }
+  for (let ci = 0; ci < components.length; ci++) {
+    const comp = components[ci];
+    const estHeight = compExtents[ci];
+    const compCenterY = cursorY + estHeight / 2;
 
-  // ── 9. Place root at center ───────────────────────────────────────
-  positioned[0].x = centerX;
-  positioned[0].y = centerY;
-
-  // ── 10. Handle disconnected nodes → neat row below ────────────────
-  const disconnected = [];
-  for (let i = 0; i < N; i++) {
-    if (!visited.has(i)) disconnected.push(i);
-  }
-
-  if (disconnected.length > 0) {
-    const allYs = positioned.filter((_, i) => visited.has(i)).map(p => p.y);
-    const bottomY = Math.max(...allYs) + 200;
-    const rowWidth = disconnected.length * 240;
-    const startX = centerX - rowWidth / 2;
-
-    disconnected.forEach((idx, i) => {
-      positioned[idx].x = startX + i * 240 + 120;
-      positioned[idx].y = bottomY;
-    });
+    layoutComponent(comp, centerX, compCenterY);
+    cursorY += estHeight + COMP_GAP;
   }
 
   return positioned;
