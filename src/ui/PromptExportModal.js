@@ -79,6 +79,10 @@ export class PromptExportModal {
             <div class="preview-toolbar">
               <span class="preview-label">📄 Prompt Preview</span>
               <div class="preview-actions">
+                <label class="compact-toggle" title="Compress prompt for smaller token budgets">
+                  <input type="checkbox" id="compact-mode-toggle" />
+                  <span class="toggle-label">⚡ Compact</span>
+                </label>
                 <button class="export-btn small" id="btn-regenerate" title="Regenerate">🔄 Regenerate</button>
               </div>
             </div>
@@ -90,6 +94,7 @@ export class PromptExportModal {
         <div class="prompt-export-footer">
           <div class="export-footer-left">
             <span class="export-char-count" id="export-char-count">0 chars</span>
+            <span class="export-token-badge" id="export-token-badge"></span>
           </div>
           <div class="export-footer-right">
             <button class="export-btn" id="btn-copy-json" title="Copy just the JSON task definition">
@@ -155,6 +160,11 @@ export class PromptExportModal {
         debounce = setTimeout(() => this._generate(), 500);
       });
     });
+
+    // Compact mode toggle
+    this.overlay.querySelector('#compact-mode-toggle').addEventListener('change', () => {
+      this._generate();
+    });
   }
 
   // ─── Public API ────────────────────────────────────────────────────
@@ -183,11 +193,12 @@ export class PromptExportModal {
     // Stage 1: Serialize
     this._serializedData = serializeMindMap(nodes, connections, { projectName, ceoVision });
 
-    // Stage 2: Generate prompt (inject workspace settings if available)
+    // Stage 2: Generate prompt (inject workspace settings + compact mode)
     const genOptions = {};
     if (this._settingsModal) {
       genOptions.workspaceInstructions = this._settingsModal.getWorkspaceInstructions();
     }
+    genOptions.compact = this.overlay.querySelector('#compact-mode-toggle')?.checked || false;
     this._currentPrompt = generateWorkflowPrompt(this._serializedData, genOptions);
     this._currentJSON = generateTaskJSON(this._serializedData, genOptions);
 
@@ -206,8 +217,24 @@ export class PromptExportModal {
     const preview = this.overlay.querySelector('#export-preview');
     preview.textContent = this._currentPrompt;
 
+    const chars = this._currentPrompt.length;
+    const tokens = Math.ceil(chars / 4);
+
     const charCount = this.overlay.querySelector('#export-char-count');
-    charCount.textContent = `${this._currentPrompt.length.toLocaleString()} chars · ~${Math.ceil(this._currentPrompt.length / 4).toLocaleString()} tokens`;
+    charCount.textContent = `${chars.toLocaleString()} chars · ~${tokens.toLocaleString()} tokens`;
+
+    // P2.3: Token budget warning indicator
+    const badge = this.overlay.querySelector('#export-token-badge');
+    if (tokens > 20000) {
+      badge.textContent = '🔴 Over budget';
+      badge.className = 'export-token-badge danger';
+    } else if (tokens > 10000) {
+      badge.textContent = '🟡 Large prompt';
+      badge.className = 'export-token-badge warn';
+    } else {
+      badge.textContent = '🟢 Efficient';
+      badge.className = 'export-token-badge ok';
+    }
   }
 
   _renderStats() {

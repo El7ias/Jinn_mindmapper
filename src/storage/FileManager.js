@@ -27,10 +27,14 @@ export class FileManager {
     this.fitToContent = opts.fitToContent;
     this.getNodeManager = opts.getNodeManager;
     this.getConnectionManager = opts.getConnectionManager;
+    this.bus = opts.bus || null;
 
     this.currentFileName = 'Untitled';
+    this.projectDescription = '';
     this._titleEl = document.getElementById('project-title');
+    this._descEl = document.getElementById('project-description');
     this._updateTitle();
+    this._initEditableTitle();
 
     // Hidden file inputs
     this._openInput = this._createInput(FILE_EXT, '.json');
@@ -45,6 +49,7 @@ export class FileManager {
     if (!this._confirmDiscard()) return;
     this.clearState();
     this.currentFileName = 'Untitled';
+    this.projectDescription = '';
     this._updateTitle();
   }
 
@@ -74,6 +79,7 @@ export class FileManager {
     const data = {
       version: '1.1',
       name: this.currentFileName,
+      description: this.projectDescription,
       exportedAt: new Date().toISOString(),
       ...state,
     };
@@ -245,6 +251,7 @@ export class FileManager {
     const data = {
       version: '1.1',
       name,
+      description: this.projectDescription,
       ...state,
     };
     const blob = new Blob([JSON.stringify(data)], { type: MIME_JSON });
@@ -301,6 +308,7 @@ export class FileManager {
       }
 
       this.currentFileName = data.name || file.name.replace(/\.[^.]+$/, '');
+      this.projectDescription = data.description || '';
       this._updateTitle();
       this.loadState({
         nodes: data.nodes,
@@ -317,6 +325,95 @@ export class FileManager {
       this._titleEl.textContent = this.currentFileName;
       this._titleEl.title = this.currentFileName;
     }
+    if (this._descEl) {
+      this._descEl.textContent = this.projectDescription || 'Add description...';
+      this._descEl.classList.toggle('placeholder', !this.projectDescription);
+      this._descEl.title = this.projectDescription || 'Click to add project description';
+    }
+  }
+
+  /** Make title and description clickable to edit inline */
+  _initEditableTitle() {
+    // --- Title editing ---
+    if (this._titleEl) {
+      this._titleEl.setAttribute('tabindex', '0');
+      this._titleEl.addEventListener('click', () => this._startEditing(this._titleEl, 'title'));
+      this._titleEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); this._titleEl.blur(); }
+        if (e.key === 'Escape') { this._cancelEditing(this._titleEl, 'title'); }
+      });
+      this._titleEl.addEventListener('blur', () => this._commitEditing(this._titleEl, 'title'));
+    }
+
+    // --- Description editing ---
+    if (this._descEl) {
+      this._descEl.setAttribute('tabindex', '0');
+      this._descEl.addEventListener('click', () => this._startEditing(this._descEl, 'description'));
+      this._descEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); this._descEl.blur(); }
+        if (e.key === 'Escape') { this._cancelEditing(this._descEl, 'description'); }
+      });
+      this._descEl.addEventListener('blur', () => this._commitEditing(this._descEl, 'description'));
+    }
+  }
+
+  _startEditing(el, field) {
+    if (el.contentEditable === 'true') return;
+    this._editBackup = field === 'title' ? this.currentFileName : this.projectDescription;
+    el.contentEditable = 'true';
+    el.classList.add('editing');
+    el.classList.remove('placeholder');
+    if (field === 'description' && !this.projectDescription) {
+      el.textContent = '';
+    }
+    // Select all text for easy replacement
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  _commitEditing(el, field) {
+    if (el.contentEditable !== 'true') return;
+    el.contentEditable = 'false';
+    el.classList.remove('editing');
+    const value = el.textContent.trim();
+
+    if (field === 'title') {
+      this.currentFileName = value || 'Untitled';
+    } else {
+      this.projectDescription = value;
+    }
+    this._updateTitle();
+    // Trigger auto-save so title persists in localStorage
+    if (this.bus) this.bus.emit('state:changed');
+  }
+
+  _cancelEditing(el, field) {
+    el.contentEditable = 'false';
+    el.classList.remove('editing');
+    if (field === 'title') {
+      el.textContent = this.currentFileName;
+    } else {
+      this._updateTitle(); // re-renders description with placeholder logic
+    }
+  }
+
+  /** Returns title metadata for inclusion in auto-save state */
+  getProjectMeta() {
+    return {
+      title: this.currentFileName,
+      description: this.projectDescription,
+    };
+  }
+
+  /** Restores title metadata from loaded state */
+  setProjectMeta(meta) {
+    if (!meta) return;
+    this.currentFileName = meta.title || 'Untitled';
+    this.projectDescription = meta.description || '';
+    this._updateTitle();
   }
 
   /** Translate all absolute coordinates in an SVG path by dx,dy */

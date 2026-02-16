@@ -10,7 +10,7 @@
 
 import { createProject, updateProject, getUserProjects } from './firestore.js';
 
-const LOCAL_STORAGE_KEY = 'mindmapper-state';
+const LOCAL_STORAGE_KEY = 'mindmapper_state';
 const MIGRATION_FLAG_KEY = 'mindmapper-migrated';
 
 /**
@@ -66,7 +66,7 @@ export async function migrateLocalToFirestore(userId) {
 
     // Mark as migrated
     localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-    console.log(`[Migration] localStorage migrated → Firestore project ${projectId}`);
+    console.info(`[Migration] localStorage migrated → Firestore project ${projectId}`);
     return projectId;
 
   } catch (err) {

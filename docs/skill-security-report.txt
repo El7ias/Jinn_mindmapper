@@ -1,0 +1,120 @@
+
+[1m╔══════════════════════════════════════════════════════════════════════════════╗[0m
+[1m║  Antigravity Skill Security Assessment Report                              ║[0m
+[1m║  Scanner v1.0.0  •  2026-02-11 21:33:46                              ║[0m
+[1m╚══════════════════════════════════════════════════════════════════════════════╝[0m
+
+  [1mSummary:[0m 6 skill(s) scanned
+    [95m● Critical: 1[0m
+    [92m● Low: 5[0m
+
+  Skill                           Score Level       Findings   Caps   Duration
+  ────────────────────────────── ────── ────────── ───────── ────── ──────────
+  skill-security-scanner         [95m  100[0m  [95mCritical  [0m         0    157       98ms
+  mindmap-to-spec                [92m    9[0m  [92mLow       [0m         0      8       16ms
+  shopify-integration            [92m    1[0m  [92mLow       [0m         0      1       18ms
+  api-cost-estimator             [92m    1[0m  [92mLow       [0m         0      1       18ms
+  firebase-deploy                [92m    0[0m  [92mLow       [0m         0      0       11ms
+  agent-scaffolding              [92m    0[0m  [92mLow       [0m         0      0       19ms
+
+  [1m═══ Detailed Findings ═══[0m
+
+  [95m[1m▸ skill-security-scanner[0m  (D:\AI_Dev\mindmapper\.gemini\skills\skill-security-scanner)
+    Score: [95m100/100 (Critical)[0m
+    Type: 7 code files  |  Lines: 1863
+    [1mCode Findings (58):[0m
+      [95m[CRITICAL][0m os.system() — unrestricted shell execution  (scripts\scan_skills.py:252)
+      [95m[CRITICAL][0m os.popen() — shell command with output capture  (scripts\scan_skills.py:253)
+      [91m[HIGH][0m subprocess invocation  (scripts\scan_skills.py:511)
+      [95m[CRITICAL][0m exec() — arbitrary code execution  (scripts\scan_skills.py:256)
+      [95m[CRITICAL][0m eval() — arbitrary expression evaluation  (scripts\scan_skills.py:257)
+      [95m[CRITICAL][0m Node.js child_process — shell execution  (scripts\scan_skills.py:258)
+      [95m[CRITICAL][0m subprocess with shell=True  (scripts\scan_skills.py:262)
+      [95m[CRITICAL][0m PowerShell Invoke-Expression  (scripts\scan_skills.py:263)
+      [91m[HIGH][0m PowerShell Start-Process  (scripts\scan_skills.py:264)
+      [91m[HIGH][0m system() call  (scripts\scan_skills.py:252)
+      [91m[HIGH][0m fetch() — network request  (scripts\scan_skills.py:273)
+      [91m[HIGH][0m curl command  (scripts\scan_skills.py:276)
+      [91m[HIGH][0m wget download  (scripts\scan_skills.py:277)
+      [93m[MEDIUM][0m WebSocket connection  (scripts\scan_skills.py:279)
+      [91m[HIGH][0m .env file access (may contain secrets)  (scripts\scan_skills.py:156)
+      [91m[HIGH][0m PowerShell file deletion  (scripts\scan_skills.py:297)
+      [91m[HIGH][0m Environment variable access  (scripts\scan_skills.py:772)
+      [91m[HIGH][0m os.getenv() — reading env vars  (scripts\scan_skills.py:303)
+      [91m[HIGH][0m Node.js process.env access  (scripts\scan_skills.py:304)
+      [91m[HIGH][0m Credential pattern in code  (scripts\scan_skills.py:306)
+      [95m[CRITICAL][0m Keychain access  (scripts\scan_skills.py:309)
+      [91m[HIGH][0m pip install — dependency installation  (scripts\scan_skills.py:313)
+      [91m[HIGH][0m npm install — dependency installation  (scripts\scan_skills.py:314)
+      [91m[HIGH][0m yarn add — dependency installation  (scripts\scan_skills.py:315)
+      [95m[CRITICAL][0m Dynamic __import__() call  (scripts\scan_skills.py:317)
+      [91m[HIGH][0m Dynamic require() with variable  (scripts\scan_skills.py:318)
+      [91m[HIGH][0m URL referencing executable code  (scripts\scan_skills.py:46)
+      [95m[CRITICAL][0m Download-and-execute pattern  (scripts\scan_skills.py:320)
+      [95m[CRITICAL][0m Crontab modification  (scripts\scan_skills.py:324)
+      [95m[CRITICAL][0m PowerShell execution policy change  (scripts\scan_skills.py:331)
+      [93m[MEDIUM][0m Reference to system prompt  (scripts\scan_skills.py:338)
+    [2mDoc Mentions (4 — discounted 85%):[0m
+      [2m[MEDIUM] Download-and-execute pattern  (SKILL.md:336)[0m
+      [2m[MEDIUM] Crontab modification  (SKILL.md:338)[0m
+      [2m[MEDIUM] Prompt injection pattern  (SKILL.md:126)[0m
+    [2mRule Definitions (95 — not scored):[0m
+      [2m[RULE] os.system() — unrestricted shell execution  (rules\dangerous-exec.yaml:10)[0m
+      [2m[RULE] subprocess invocation  (rules\dangerous-exec.yaml:59)[0m
+      [2m[RULE] exec() — arbitrary code execution  (rules\dangerous-exec.yaml:35)[0m
+      [2m[RULE] eval() — arbitrary expression evaluation  (rules\dangerous-exec.yaml:24)[0m
+      [2m[RULE] Node.js child_process — shell execution  (rules\dangerous-exec.yaml:70)[0m
+      [2m[RULE] Process spawn  (rules\dangerous-exec.yaml:77)[0m
+      [2m[RULE] execSync — synchronous shell execution  (rules\dangerous-exec.yaml:76)[0m
+      [2m[RULE] subprocess with shell=True  (rules\dangerous-exec.yaml:45)[0m
+      [2m[RULE] system() call  (rules\dangerous-exec.yaml:10)[0m
+      [2m[RULE] Dynamic module import  (rules\dangerous-exec.yaml:105)[0m
+      [2m[RULE] Dynamic __import__() call  (rules\dangerous-exec.yaml:95)[0m
+      [2m[RULE] URL referencing executable code  (rules\dangerous-exec.yaml:70)[0m
+      [2m[RULE] Reference to system prompt  (rules\dangerous-exec.yaml:16)[0m
+      [2m[RULE] Python requests HTTP call  (rules\network-exfil.yaml:14)[0m
+      [2m[RULE] urllib network access  (rules\network-exfil.yaml:40)[0m
+      [2m[RULE] httpx HTTP client  (rules\network-exfil.yaml:52)[0m
+      [2m[RULE] fetch() — network request  (rules\network-exfil.yaml:62)[0m
+      [2m[RULE] axios HTTP client  (rules\network-exfil.yaml:75)[0m
+      [2m[RULE] Raw socket access  (rules\network-exfil.yaml:89)[0m
+      [2m[RULE] SMTP email sending  (rules\network-exfil.yaml:103)[0m
+      [2m[RULE] Paramiko SSH client  (rules\network-exfil.yaml:116)[0m
+      [2m[RULE] Bulk file operations (rmtree/move/copy)  (rules\filesystem-abuse.yaml:33)[0m
+      [2m[RULE] File deletion  (rules\filesystem-abuse.yaml:44)[0m
+      [2m[RULE] Directory deletion  (rules\filesystem-abuse.yaml:49)[0m
+      [2m[RULE] Node.js filesystem mutation  (rules\filesystem-abuse.yaml:63)[0m
+      [2m[RULE] Download-and-execute pattern  (rules\filesystem-abuse.yaml:95)[0m
+      [2m[RULE] .env file access (may contain secrets)  (rules\credential-supply-chain.yaml:27)[0m
+      [2m[RULE] Environment variable access  (rules\credential-supply-chain.yaml:14)[0m
+      [2m[RULE] os.getenv() — reading env vars  (rules\credential-supply-chain.yaml:16)[0m
+      [2m[RULE] Node.js process.env access  (rules\credential-supply-chain.yaml:27)[0m
+      [2m[RULE] Credential pattern in code  (rules\credential-supply-chain.yaml:6)[0m
+      [2m[RULE] System keyring access  (rules\credential-supply-chain.yaml:41)[0m
+      [2m[RULE] Base64 encoding (potential obfuscation)  (rules\credential-supply-chain.yaml:56)[0m
+      [2m[RULE] pip install — dependency installation  (rules\credential-supply-chain.yaml:82)[0m
+
+  [92m[1m▸ mindmap-to-spec[0m  (D:\AI_Dev\mindmapper\.gemini\skills\mindmap-to-spec)
+    Score: [92m9/100 (Low)[0m
+    Type: instruction-only  |  Lines: 0
+    [2m(instruction-only skill — score capped at 25)[0m
+    [2mDoc Mentions (8 — discounted 85%):[0m
+      [2m[MEDIUM] Credential pattern in code  (SKILL.md:288)[0m
+      [2m[MEDIUM] URL referencing executable code  (SKILL.md:603)[0m
+      [2m[MEDIUM] Reference to system prompt  (SKILL.md:768)[0m
+
+  [92m[1m▸ shopify-integration[0m  (D:\AI_Dev\mindmapper\.gemini\skills\shopify-integration)
+    Score: [92m1/100 (Low)[0m
+    Type: instruction-only  |  Lines: 0
+    [2m(instruction-only skill — score capped at 25)[0m
+    [2mDoc Mentions (1 — discounted 85%):[0m
+      [2m[MEDIUM] Credential pattern in code  (SKILL.md:540)[0m
+
+  [92m[1m▸ api-cost-estimator[0m  (D:\AI_Dev\mindmapper\.gemini\skills\api-cost-estimator)
+    Score: [92m1/100 (Low)[0m
+    Type: instruction-only  |  Lines: 0
+    [2m(instruction-only skill — score capped at 25)[0m
+    [2mDoc Mentions (1 — discounted 85%):[0m
+      [2m[MEDIUM] Reference to system prompt  (SKILL.md:733)[0m
+
+  [2mScanner: ag-skill-scan v1.0.0  |  Rules: D:\AI_Dev\mindmapper\.gemini\skills\skill-security-scanner\rules[0m

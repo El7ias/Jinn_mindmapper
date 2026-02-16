@@ -287,6 +287,145 @@ function websiteMap() {
   };
 }
 
+// ─────────────────────────────────────
+//  7. E-commerce Starter
+// ─────────────────────────────────────
+function ecommerceStarter() {
+  _pid = 600;
+  const n = {
+    store:    nid(), shopify:  nid(), stripe:  nid(), email:   nid(),
+    analytics: nid(), social: nid(), hosting: nid(), domain:  nid(),
+    products: nid(), orders:  nid(),
+  };
+  return {
+    id: 'ecommerce-starter',
+    name: 'E-commerce Starter',
+    description: 'Full e-commerce setup — Shopify, Stripe, Email Marketing, Analytics',
+    icon: '🛍️',
+    category: 'commerce',
+    data: {
+      nodes: [
+        { id: n.store,     text: 'Online Store',        x: 350,  y: 0,   color: '#96bf48', shape: 'rounded',   commerceType: null },
+        { id: n.shopify,   text: 'Shopify',             x: 100,  y: 150, color: '#96bf48', shape: 'rounded',   commerceType: 'shopify' },
+        { id: n.stripe,    text: 'Stripe',              x: 600,  y: 150, color: '#635bff', shape: 'rounded',   commerceType: 'stripe' },
+        { id: n.products,  text: 'Product Catalog',     x: 0,    y: 310, color: '#ffc107', shape: 'rectangle' },
+        { id: n.orders,    text: 'Order Management',    x: 250,  y: 310, color: '#00e5ff', shape: 'rectangle' },
+        { id: n.email,     text: 'Email Marketing',     x: 500,  y: 310, color: '#ffe01b', shape: 'rounded',   commerceType: 'email-marketing' },
+        { id: n.analytics, text: 'Google Analytics',    x: 750,  y: 310, color: '#e37400', shape: 'rounded',   commerceType: 'google-analytics' },
+        { id: n.social,    text: 'Social Channel',      x: 100,  y: 470, color: '#1da1f2', shape: 'rounded',   commerceType: 'social-channel' },
+        { id: n.hosting,   text: 'Cloud Hosting',       x: 400,  y: 470, color: '#00bcd4', shape: 'rounded',   commerceType: 'cloud-hosting' },
+        { id: n.domain,    text: 'Custom Domain',       x: 650,  y: 470, color: '#e6edf3', shape: 'hexagon' },
+      ],
+      connections: [
+        { id: cid(), sourceId: n.store,    sourcePort: 'bottom', targetId: n.shopify,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.store,    sourcePort: 'bottom', targetId: n.stripe,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'bottom', targetId: n.products,  targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'bottom', targetId: n.orders,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.stripe,   sourcePort: 'bottom', targetId: n.email,     targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.stripe,   sourcePort: 'bottom', targetId: n.analytics, targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.products, sourcePort: 'bottom', targetId: n.social,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.email,    sourcePort: 'bottom', targetId: n.hosting,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.analytics, sourcePort: 'bottom', targetId: n.domain,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'right',  targetId: n.stripe,    targetPort: 'left', directed: 'both' },
+      ],
+    },
+  };
+}
+
+// ─────────────────────────────────────
+//  8. Creator Storefront
+// ─────────────────────────────────────
+function creatorStorefront() {
+  _pid = 700;
+  const n = {
+    brand:    nid(), gumroad: nid(), github:  nid(), social:  nid(),
+    content:  nid(), analytics: nid(), email: nid(), portfolio: nid(),
+    merch:    nid(), community: nid(),
+  };
+  return {
+    id: 'creator-storefront',
+    name: 'Creator Storefront',
+    description: 'Creator marketplace — Gumroad, Social, GitHub, Analytics',
+    icon: '🎨',
+    category: 'commerce',
+    data: {
+      nodes: [
+        { id: n.brand,     text: 'Creator Brand',       x: 350,  y: 0,   color: '#ff90e8', shape: 'rounded' },
+        { id: n.gumroad,   text: 'Gumroad',             x: 100,  y: 150, color: '#ff90e8', shape: 'rounded',   commerceType: 'gumroad' },
+        { id: n.github,    text: 'GitHub Repo',         x: 350,  y: 150, color: '#8b949e', shape: 'rounded',   commerceType: 'github-repo' },
+        { id: n.social,    text: 'Social Channel',      x: 600,  y: 150, color: '#1da1f2', shape: 'rounded',   commerceType: 'social-channel' },
+        { id: n.content,   text: 'Digital Products',    x: 0,    y: 310, color: '#ff90e8', shape: 'rectangle' },
+        { id: n.merch,     text: 'Merch / Physical',    x: 200,  y: 310, color: '#ffc107', shape: 'rectangle' },
+        { id: n.portfolio, text: 'Portfolio Site',      x: 400,  y: 310, color: '#7c4dff', shape: 'rectangle' },
+        { id: n.community, text: 'Community',           x: 600,  y: 310, color: '#00ff88', shape: 'hexagon' },
+        { id: n.analytics, text: 'Mixpanel',            x: 200,  y: 470, color: '#7856ff', shape: 'rounded',   commerceType: 'mixpanel' },
+        { id: n.email,     text: 'Email Marketing',     x: 500,  y: 470, color: '#ffe01b', shape: 'rounded',   commerceType: 'email-marketing' },
+      ],
+      connections: [
+        { id: cid(), sourceId: n.brand,   sourcePort: 'bottom', targetId: n.gumroad,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.brand,   sourcePort: 'bottom', targetId: n.github,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.brand,   sourcePort: 'bottom', targetId: n.social,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.gumroad, sourcePort: 'bottom', targetId: n.content,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.gumroad, sourcePort: 'bottom', targetId: n.merch,     targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.github,  sourcePort: 'bottom', targetId: n.portfolio, targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.social,  sourcePort: 'bottom', targetId: n.community, targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.content, sourcePort: 'bottom', targetId: n.analytics, targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.community, sourcePort: 'bottom', targetId: n.email,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.gumroad, sourcePort: 'right',  targetId: n.github,    targetPort: 'left', directed: 'none' },
+      ],
+    },
+  };
+}
+
+// ─────────────────────────────────────
+//  9. Full Stack Commerce
+// ─────────────────────────────────────
+function fullStackCommerce() {
+  _pid = 800;
+  const n = {
+    platform: nid(), shopify: nid(), stripe:  nid(), analytics: nid(),
+    email:    nid(), ads:     nid(), crm:     nid(), firebase:  nid(),
+    social:   nid(), mcp:     nid(), support: nid(), deploy:    nid(),
+  };
+  return {
+    id: 'full-stack-commerce',
+    name: 'Full Stack Commerce',
+    description: 'Complete commerce pipeline — Store, Payments, Marketing, Analytics, DevOps',
+    icon: '🏗️',
+    category: 'commerce',
+    data: {
+      nodes: [
+        { id: n.platform,  text: 'Commerce Platform',   x: 350,  y: 0,   color: '#00e5ff', shape: 'rounded' },
+        { id: n.shopify,   text: 'Shopify',             x: 50,   y: 160, color: '#96bf48', shape: 'rounded',   commerceType: 'shopify' },
+        { id: n.stripe,    text: 'Stripe',              x: 300,  y: 160, color: '#635bff', shape: 'rounded',   commerceType: 'stripe' },
+        { id: n.firebase,  text: 'Firebase',            x: 550,  y: 160, color: '#ffca28', shape: 'rounded',   commerceType: 'firebase' },
+        { id: n.mcp,       text: 'MCP Server',          x: 750,  y: 160, color: '#00e5ff', shape: 'rounded',   commerceType: 'mcp-server' },
+        { id: n.email,     text: 'Email Marketing',     x: 0,    y: 330, color: '#ffe01b', shape: 'rounded',   commerceType: 'email-marketing' },
+        { id: n.ads,       text: 'Meta Ads',            x: 200,  y: 330, color: '#1877f2', shape: 'rounded',   commerceType: 'meta-ads' },
+        { id: n.analytics, text: 'Google Analytics',    x: 420,  y: 330, color: '#e37400', shape: 'rounded',   commerceType: 'google-analytics' },
+        { id: n.crm,       text: 'HubSpot',             x: 620,  y: 330, color: '#ff7a59', shape: 'rounded',   commerceType: 'hubspot' },
+        { id: n.social,    text: 'Social Channel',      x: 100,  y: 490, color: '#1da1f2', shape: 'rounded',   commerceType: 'social-channel' },
+        { id: n.support,   text: 'Customer Support',    x: 350,  y: 490, color: '#00ff88', shape: 'hexagon' },
+        { id: n.deploy,    text: 'Cloud Hosting',       x: 600,  y: 490, color: '#00bcd4', shape: 'rounded',   commerceType: 'cloud-hosting' },
+      ],
+      connections: [
+        { id: cid(), sourceId: n.platform, sourcePort: 'bottom', targetId: n.shopify,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.platform, sourcePort: 'bottom', targetId: n.stripe,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.platform, sourcePort: 'bottom', targetId: n.firebase,  targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.platform, sourcePort: 'bottom', targetId: n.mcp,       targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'bottom', targetId: n.email,     targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'bottom', targetId: n.ads,       targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.stripe,   sourcePort: 'bottom', targetId: n.analytics, targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.firebase, sourcePort: 'bottom', targetId: n.crm,       targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.email,    sourcePort: 'bottom', targetId: n.social,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.ads,      sourcePort: 'bottom', targetId: n.support,   targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.crm,      sourcePort: 'bottom', targetId: n.deploy,    targetPort: 'top', directed: 'forward' },
+        { id: cid(), sourceId: n.shopify,  sourcePort: 'right',  targetId: n.stripe,    targetPort: 'left', directed: 'both' },
+      ],
+    },
+  };
+}
+
 // ═══════════════════════════════════
 //  Export all built-in presets
 // ═══════════════════════════════════
@@ -297,4 +436,7 @@ export const BUILTIN_PRESETS = [
   saasApp(),
   websiteWireframe(),
   websiteMap(),
+  ecommerceStarter(),
+  creatorStorefront(),
+  fullStackCommerce(),
 ];

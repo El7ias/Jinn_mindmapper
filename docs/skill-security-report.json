@@ -1,0 +1,1903 @@
+{
+  "scanner_version": "1.0.0",
+  "timestamp": "2026-02-11T21:17:52Z",
+  "summary": {
+    "total_skills": 6,
+    "by_level": {
+      "Medium": 1,
+      "Critical": 2,
+      "High": 3
+    },
+    "max_score": 100,
+    "avg_score": 70.83333333333333
+  },
+  "skills": [
+    {
+      "name": "skill-security-scanner",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\skill-security-scanner",
+      "description": "Global meta-skill that scans .gemini/skills directories for malicious code using Semgrep static analysis, built-in capability detection, and optional LLM-assisted risk scoring. Produces normalized 0-100 risk scores per skill.",
+      "code_files": [
+        "scripts\\scan_skills.py",
+        "rules\\dangerous-exec.yaml",
+        "rules\\network-exfil.yaml",
+        "rules\\filesystem-abuse.yaml",
+        "rules\\credential-supply-chain.yaml",
+        "bin\\ag-skill-scan.bat",
+        "bin\\ag-skill-scan.sh"
+      ],
+      "total_lines": 1689,
+      "file_hash": "552ae3d279394aee",
+      "risk_score": 100,
+      "static_score": 100,
+      "llm_score": null,
+      "risk_level": "Critical",
+      "scan_duration_ms": 94,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "scripts\\scan_skills.py",
+          "line": 247
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.popen() \u2014 shell command with output capture",
+          "file": "scripts\\scan_skills.py",
+          "line": 248
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "scripts\\scan_skills.py",
+          "line": 436
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "scripts\\scan_skills.py",
+          "line": 479
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "scripts\\scan_skills.py",
+          "line": 251
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "scripts\\scan_skills.py",
+          "line": 252
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "scripts\\scan_skills.py",
+          "line": 253
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "subprocess with shell=True",
+          "file": "scripts\\scan_skills.py",
+          "line": 257
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "PowerShell Invoke-Expression",
+          "file": "scripts\\scan_skills.py",
+          "line": 258
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "PowerShell Start-Process",
+          "file": "scripts\\scan_skills.py",
+          "line": 259
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "scripts\\scan_skills.py",
+          "line": 247
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "scripts\\scan_skills.py",
+          "line": 260
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "fetch() \u2014 network request",
+          "file": "scripts\\scan_skills.py",
+          "line": 268
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "curl command",
+          "file": "scripts\\scan_skills.py",
+          "line": 271
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "wget download",
+          "file": "scripts\\scan_skills.py",
+          "line": 272
+        },
+        {
+          "category": "network",
+          "severity": "medium",
+          "description": "WebSocket connection",
+          "file": "scripts\\scan_skills.py",
+          "line": 274
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": ".env file access (may contain secrets)",
+          "file": "scripts\\scan_skills.py",
+          "line": 155
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": ".env file access (may contain secrets)",
+          "file": "scripts\\scan_skills.py",
+          "line": 284
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": ".env file access (may contain secrets)",
+          "file": "scripts\\scan_skills.py",
+          "line": 299
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "PowerShell file deletion",
+          "file": "scripts\\scan_skills.py",
+          "line": 292
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Environment variable access",
+          "file": "scripts\\scan_skills.py",
+          "line": 670
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Environment variable access",
+          "file": "scripts\\scan_skills.py",
+          "line": 690
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "os.getenv() \u2014 reading env vars",
+          "file": "scripts\\scan_skills.py",
+          "line": 298
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Node.js process.env access",
+          "file": "scripts\\scan_skills.py",
+          "line": 299
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 301
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 670
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 671
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 672
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 674
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 690
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 691
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 692
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "scripts\\scan_skills.py",
+          "line": 694
+        },
+        {
+          "category": "credential",
+          "severity": "critical",
+          "description": "Keychain access",
+          "file": "scripts\\scan_skills.py",
+          "line": 304
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 308
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 667
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 688
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 993
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "npm install \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 309
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "yarn add \u2014 dependency installation",
+          "file": "scripts\\scan_skills.py",
+          "line": 310
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Dynamic __import__() call",
+          "file": "scripts\\scan_skills.py",
+          "line": 312
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "Dynamic require() with variable",
+          "file": "scripts\\scan_skills.py",
+          "line": 313
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 46
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 48
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 204
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 253
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 270
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 291
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 299
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 314
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 498
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 722
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "scripts\\scan_skills.py",
+          "line": 1069
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Download-and-execute pattern",
+          "file": "scripts\\scan_skills.py",
+          "line": 315
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Download-and-execute pattern",
+          "file": "scripts\\scan_skills.py",
+          "line": 316
+        },
+        {
+          "category": "persistence",
+          "severity": "critical",
+          "description": "Crontab modification",
+          "file": "scripts\\scan_skills.py",
+          "line": 319
+        },
+        {
+          "category": "persistence",
+          "severity": "critical",
+          "description": "PowerShell execution policy change",
+          "file": "scripts\\scan_skills.py",
+          "line": 326
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "scripts\\scan_skills.py",
+          "line": 333
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 10
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 13
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 59
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 60
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 61
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 62
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 35
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 37
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 75
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 24
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 25
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 27
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 85
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 87
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 70
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 73
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 74
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 75
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 76
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 77
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "Process spawn",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 77
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "execSync \u2014 synchronous shell execution",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 76
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "subprocess with shell=True",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 45
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "subprocess with shell=True",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 48
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 10
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 13
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "Dynamic module import",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 105
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "Dynamic module import",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 107
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Dynamic __import__() call",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 95
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Dynamic __import__() call",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 97
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 70
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "rules\\dangerous-exec.yaml",
+          "line": 16
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\network-exfil.yaml",
+          "line": 14
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\network-exfil.yaml",
+          "line": 15
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\network-exfil.yaml",
+          "line": 16
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\network-exfil.yaml",
+          "line": 29
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "urllib network access",
+          "file": "rules\\network-exfil.yaml",
+          "line": 40
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "urllib network access",
+          "file": "rules\\network-exfil.yaml",
+          "line": 41
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "httpx HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 52
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "httpx HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 53
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "httpx HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 54
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "fetch() \u2014 network request",
+          "file": "rules\\network-exfil.yaml",
+          "line": 62
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "fetch() \u2014 network request",
+          "file": "rules\\network-exfil.yaml",
+          "line": 64
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "axios HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 75
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "axios HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 76
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "axios HTTP client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 77
+        },
+        {
+          "category": "network",
+          "severity": "medium",
+          "description": "Raw socket access",
+          "file": "rules\\network-exfil.yaml",
+          "line": 89
+        },
+        {
+          "category": "network",
+          "severity": "medium",
+          "description": "Raw socket access",
+          "file": "rules\\network-exfil.yaml",
+          "line": 90
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "SMTP email sending",
+          "file": "rules\\network-exfil.yaml",
+          "line": 103
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "SMTP email sending",
+          "file": "rules\\network-exfil.yaml",
+          "line": 104
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Paramiko SSH client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 116
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Paramiko SSH client",
+          "file": "rules\\network-exfil.yaml",
+          "line": 117
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 101
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 105
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 101
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "Bulk file operations (rmtree/move/copy)",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 33
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "Bulk file operations (rmtree/move/copy)",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 35
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "File deletion",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 44
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "File deletion",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 47
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "Directory deletion",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 49
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": "Node.js filesystem mutation",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 63
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "URL referencing executable code",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 57
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Download-and-execute pattern",
+          "file": "rules\\filesystem-abuse.yaml",
+          "line": 95
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 89
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 86
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 87
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "subprocess invocation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 88
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 105
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 118
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 123
+        },
+        {
+          "category": "shell_exec",
+          "severity": "critical",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 109
+        },
+        {
+          "category": "shell_exec",
+          "severity": "high",
+          "description": "system() call",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 89
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 103
+        },
+        {
+          "category": "network",
+          "severity": "high",
+          "description": "Python requests HTTP call",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 107
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": ".env file access (may contain secrets)",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 27
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "high",
+          "description": ".env file access (may contain secrets)",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 29
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Environment variable access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 14
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Environment variable access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 15
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "os.getenv() \u2014 reading env vars",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 16
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Node.js process.env access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 27
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Node.js process.env access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 29
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 6
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 21
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 39
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 41
+        },
+        {
+          "category": "credential",
+          "severity": "high",
+          "description": "Credential pattern in code",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 42
+        },
+        {
+          "category": "credential",
+          "severity": "critical",
+          "description": "System keyring access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 41
+        },
+        {
+          "category": "credential",
+          "severity": "critical",
+          "description": "System keyring access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 42
+        },
+        {
+          "category": "credential",
+          "severity": "critical",
+          "description": "System keyring access",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 43
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Base64 encoding (potential obfuscation)",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 56
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Base64 encoding (potential obfuscation)",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 57
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 82
+        },
+        {
+          "category": "supply_chain",
+          "severity": "high",
+          "description": "pip install \u2014 dependency installation",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 89
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Download-and-execute pattern",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 94
+        },
+        {
+          "category": "supply_chain",
+          "severity": "critical",
+          "description": "Download-and-execute pattern",
+          "file": "rules\\credential-supply-chain.yaml",
+          "line": 98
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "os.system() \u2014 unrestricted shell execution",
+          "file": "SKILL.md",
+          "line": 333
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "exec() \u2014 arbitrary code execution",
+          "file": "SKILL.md",
+          "line": 333
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "eval() \u2014 arbitrary expression evaluation",
+          "file": "SKILL.md",
+          "line": 333
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "Node.js child_process \u2014 shell execution",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "subprocess with shell=True",
+          "file": "SKILL.md",
+          "line": 333
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "PowerShell Invoke-Expression",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "system() call",
+          "file": "SKILL.md",
+          "line": 120
+        },
+        {
+          "category": "shell_exec",
+          "severity": "medium",
+          "description": "system() call",
+          "file": "SKILL.md",
+          "line": 333
+        },
+        {
+          "category": "network",
+          "severity": "medium",
+          "description": "fetch() \u2014 network request",
+          "file": "SKILL.md",
+          "line": 121
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": "Access to sensitive dotfiles",
+          "file": "SKILL.md",
+          "line": 122
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": ".env file access (may contain secrets)",
+          "file": "SKILL.md",
+          "line": 123
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": "Bulk file operations (rmtree/move/copy)",
+          "file": "SKILL.md",
+          "line": 122
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": "Bulk file operations (rmtree/move/copy)",
+          "file": "SKILL.md",
+          "line": 337
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": "Recursive force delete",
+          "file": "SKILL.md",
+          "line": 122
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": "Recursive force delete",
+          "file": "SKILL.md",
+          "line": 337
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Environment variable access",
+          "file": "SKILL.md",
+          "line": 123
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Node.js process.env access",
+          "file": "SKILL.md",
+          "line": 123
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "Dynamic __import__() call",
+          "file": "SKILL.md",
+          "line": 124
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 109
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "Download-and-execute pattern",
+          "file": "SKILL.md",
+          "line": 124
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "Download-and-execute pattern",
+          "file": "SKILL.md",
+          "line": 336
+        },
+        {
+          "category": "persistence",
+          "severity": "medium",
+          "description": "Crontab modification",
+          "file": "SKILL.md",
+          "line": 125
+        },
+        {
+          "category": "persistence",
+          "severity": "medium",
+          "description": "Crontab modification",
+          "file": "SKILL.md",
+          "line": 338
+        },
+        {
+          "category": "persistence",
+          "severity": "medium",
+          "description": "Windows registry modification",
+          "file": "SKILL.md",
+          "line": 125
+        },
+        {
+          "category": "persistence",
+          "severity": "medium",
+          "description": "PowerShell execution policy change",
+          "file": "SKILL.md",
+          "line": 125
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Prompt injection pattern",
+          "file": "SKILL.md",
+          "line": 126
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Prompt injection pattern",
+          "file": "SKILL.md",
+          "line": 339
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    },
+    {
+      "name": "shopify-integration",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\shopify-integration",
+      "description": "End-to-end Shopify integration skill for MindMapper \u2014 covers Shopify Admin API setup, Custom App creation, MCP server configuration, credential management, connection testing, theme development, and the Shopify \u2194 Agent bridge.",
+      "code_files": [],
+      "total_lines": 0,
+      "file_hash": "2f86fa94ecb3b681",
+      "risk_score": 86,
+      "static_score": 86,
+      "llm_score": null,
+      "risk_level": "Critical",
+      "scan_duration_ms": 20,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": ".env file access (may contain secrets)",
+          "file": "SKILL.md",
+          "line": 509
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 338
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 518
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 521
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 522
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 540
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 66
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 67
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 68
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 69
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 70
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 71
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 276
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 295
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 349
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 350
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 351
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 352
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 353
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 354
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 355
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 356
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 509
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    },
+    {
+      "name": "mindmap-to-spec",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\mindmap-to-spec",
+      "description": "Comprehensive guide to MindMapper's mind-map-to-specification pipeline \u2014 serialization, validation, prompt generation, agent orchestration, model tier routing, and export. The complete data flow from visual canvas to executable agent workflow.",
+      "code_files": [],
+      "total_lines": 0,
+      "file_hash": "036e619f70633c8e",
+      "risk_score": 69,
+      "static_score": 69,
+      "llm_score": null,
+      "risk_level": "High",
+      "scan_duration_ms": 19,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 288
+        },
+        {
+          "category": "credential",
+          "severity": "medium",
+          "description": "Credential pattern in code",
+          "file": "SKILL.md",
+          "line": 289
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 72
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 391
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 396
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 603
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 739
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 747
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 754
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 762
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 767
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "SKILL.md",
+          "line": 768
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    },
+    {
+      "name": "api-cost-estimator",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\api-cost-estimator",
+      "description": "Complete guide to MindMapper's API cost estimation, tracking, budgeting, and optimization systems \u2014 covering model pricing, token heuristics, three-tier routing, CostTracker, BrowserAgentBridge cost history, AgentPanel estimation model, CFO/auditor agent prompts, and budget enforcement.",
+      "code_files": [],
+      "total_lines": 0,
+      "file_hash": "d909e52ee142de59",
+      "risk_score": 65,
+      "static_score": 65,
+      "llm_score": null,
+      "risk_level": "High",
+      "scan_duration_ms": 20,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 860
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 861
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 862
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 863
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 864
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 865
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 866
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 867
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "SKILL.md",
+          "line": 733
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "SKILL.md",
+          "line": 865
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    },
+    {
+      "name": "agent-scaffolding",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\agent-scaffolding",
+      "description": "Complete reference for MindMapper's multi-agent execution framework \u2014 covering AgentBase lifecycle, all 14 specialist agents, AgentRegistry, MessageBus, ContextManager, ExecutionEngine round-based orchestration, COOAgent planning, BrowserAgentBridge streaming, agent factory pattern, and main.js wiring.",
+      "code_files": [],
+      "total_lines": 0,
+      "file_hash": "e3dad0ad66b7fe49",
+      "risk_score": 55,
+      "static_score": 55,
+      "llm_score": null,
+      "risk_level": "High",
+      "scan_duration_ms": 24,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 3
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 8
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 25
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1176
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1233
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1234
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1235
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1236
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1237
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1238
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1239
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1240
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1241
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1242
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1243
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1244
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 1245
+        },
+        {
+          "category": "prompt_injection",
+          "severity": "medium",
+          "description": "Reference to system prompt",
+          "file": "SKILL.md",
+          "line": 1241
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    },
+    {
+      "name": "firebase-deploy",
+      "path": "D:\\AI_Dev\\mindmapper\\.gemini\\skills\\firebase-deploy",
+      "description": "Standardized Firebase deployment workflow for MindMapper \u2014 covers environment validation, selective deployment (Hosting, Cloud Functions, Firestore Rules), emulator testing, rollback, and troubleshooting.",
+      "code_files": [],
+      "total_lines": 0,
+      "file_hash": "37a82af831e3b7c8",
+      "risk_score": 50,
+      "static_score": 50,
+      "llm_score": null,
+      "risk_level": "Medium",
+      "scan_duration_ms": 12,
+      "semgrep_findings": [],
+      "capability_flags": [
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": ".env file access (may contain secrets)",
+          "file": "SKILL.md",
+          "line": 98
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": ".env file access (may contain secrets)",
+          "file": "SKILL.md",
+          "line": 104
+        },
+        {
+          "category": "fs_abuse",
+          "severity": "medium",
+          "description": ".env file access (may contain secrets)",
+          "file": "SKILL.md",
+          "line": 238
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "npm install \u2014 dependency installation",
+          "file": "SKILL.md",
+          "line": 68
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 42
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 144
+        },
+        {
+          "category": "supply_chain",
+          "severity": "medium",
+          "description": "URL referencing executable code",
+          "file": "SKILL.md",
+          "line": 184
+        }
+      ],
+      "llm_rationale": "",
+      "llm_recommendations": []
+    }
+  ]
+}

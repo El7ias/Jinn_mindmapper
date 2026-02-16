@@ -4,6 +4,31 @@ Chronological log of design decisions, trade-offs, and resolutions.
 
 ---
 
+## 2026-02-09 — Agent Roster Alignment
+
+### Decision: Merge Creative Director into Frontend UI/UX
+
+**Context**: The codebase had two separate agents — Creative Director (design authority: visual system, typography, branding) and Frontend Developer (implementation: code, components, responsive). In practice, separating "design" from "implementation" created coordination overhead and blurred ownership. When a task like "build a login page" arrived, it was unclear whether it was a design task (Creative Director) or an implementation task (Frontend) — and the handoff between them was a redundant hop.
+**Decision**: Merge the Creative Director role into the Frontend agent, creating a single **Frontend UI/UX** agent that owns both design authority and implementation.
+**Rationale**: In real teams, "design-implement" handoffs are the #1 source of fidelity loss. A merged role ensures the agent who designs the visual system is the same agent who implements it — no translation layer, no lost nuance. The merged agent still has dedicated design prompts (color palette, font stack, spacing scale, motion specs) but can also produce code in the same turn.
+**Trade-off**: A single agent covering both design and code may produce less specialized output than two dedicated agents. Acceptable because: (a) the prompt still explicitly includes both design and implementation instructions, and (b) the tier (standard) gives enough reasoning capacity for both concerns.
+**Alternative rejected**: Keeping Creative Director as a separate "advisory" role. This was rejected because advisory-only agents add tokens without clear accountability — their recommendations could be ignored by the Frontend agent with no feedback loop.
+
+### Decision: CEO is human, not an AI agent
+
+**Context**: The `DEFAULT_TIER_MAP` in `AgentBase.js` included a `'ceo': 'opus'` entry, implying the CEO was an AI agent. In reality, the CEO is always the human user — the person sitting at the keyboard making decisions.
+**Decision**: Remove `ceo` from the tier map and all AI agent configurations. The CEO exists only as a label in the reporting hierarchy (the top of the org chart), not as an executable agent.
+**Rationale**: An AI "CEO" has no authority to make product decisions — that's the human's job. Keeping a CEO agent entry creates confusion about who approves milestones and makes strategic calls. By explicitly excluding CEO from AI agent config, the system correctly models the human-in-the-loop architecture.
+
+### Decision: Formalize `reportsTo` in code (not just prompt metadata)
+
+**Context**: Reporting lines existed as prompt-level metadata (`reports_to` in `WorkflowPromptGenerator`), but the actual agent classes (`AgentBase`, `SpecialistAgents`) had no `reportsTo` property. The `AgentRegistry.ROLE_CONFIG` had `reportsTo` for routing, but SpecialistAgents didn't expose it.
+**Decision**: Add a `reportsTo` getter to `AgentBase` (returns `null` by default), override it in specific specialist agents (`TokenAuditorAgent → 'cfo'`, `ApiCostAuditorAgent → 'cfo'`, `ProjectAuditorAgent → 'coo'`), and fix a bug where `ProjectAuditor.reportsTo` was incorrectly set to `'cfo'` in `AgentRegistry`.
+**Rationale**: Having `reportsTo` in both the prompt layer AND the code layer ensures consistency. The code-level property enables future features like automatic report routing in `MessageBus` and hierarchical status displays in the UI. The prompt-level metadata tells the executing agent about the hierarchy; the code-level property tells our orchestration engine.
+**Bug fixed**: `AgentRegistry.ROLE_CONFIG['project-auditor'].reportsTo` was `'cfo'` but should be `'coo'` — the Project Auditor reports operational findings to the COO, not financial findings to the CFO.
+
+---
+
 ## 2026-02-08 — Agent Organizational Structure & Communication Protocol
 
 ### Decision: Formal org chart metadata on every agent role

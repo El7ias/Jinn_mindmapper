@@ -380,7 +380,8 @@ export class ConnectionManager {
 
     const d = this._computeSmartPath(
       sp.x, sp.y, conn.sourcePort,
-      tp.x, tp.y, conn.targetPort
+      tp.x, tp.y, conn.targetPort,
+      conn.sourceId, conn.targetId
     );
     // Store the clean base path (no jumps) — used for intersection detection
     conn._basePathD = d;
@@ -419,53 +420,60 @@ export class ConnectionManager {
     return `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
   }
 
-  /** Smart orthogonal routing that extends outward from ports before turning */
-  _computeSmartPath(x1, y1, port1, x2, y2, port2) {
+  /** Smart orthogonal routing with node-avoidance.
+   *  Extends outward from ports, computes basic L/Z route, then nudges
+   *  any segment that passes through an intermediate node's bounding box. */
+  _computeSmartPath(x1, y1, port1, x2, y2, port2, sourceId, targetId) {
     const OFFSET = 30; // minimum distance to extend from port before turning
 
-    // Get the direction vector for each port
     const dir1 = this._portDirection(port1);
     const dir2 = this._portDirection(port2);
 
-    // Extend from each port
+    // Extend outward from each port
     const ex1 = x1 + dir1.dx * OFFSET;
     const ey1 = y1 + dir1.dy * OFFSET;
     const ex2 = x2 + dir2.dx * OFFSET;
     const ey2 = y2 + dir2.dy * OFFSET;
 
-    // Build path: port1 → extension1 → (elbow turns) → extension2 → port2
-    // Use at most 2 intermediate elbow segments between extensions
-    const segments = [`M ${x1} ${y1}`, `L ${ex1} ${ey1}`];
-
-    // Route from ex1,ey1 to ex2,ey2 with orthogonal segments
+    // ── Basic orthogonal route between extension points ──────────────
+    const midPoints = [];
     const dx = ex2 - ex1;
     const dy = ey2 - ey1;
 
-    // Horizontal then vertical, or vertical then horizontal
     if ((dir1.dx !== 0 && dir2.dy !== 0) || (dir1.dx !== 0 && dir2.dx !== 0 && Math.abs(dx) > Math.abs(dy))) {
-      // Go horizontal first, then vertical
-      segments.push(`L ${ex2} ${ey1}`);
-      segments.push(`L ${ex2} ${ey2}`);
+      midPoints.push({ x: ex2, y: ey1 });
     } else if ((dir1.dy !== 0 && dir2.dx !== 0) || (dir1.dy !== 0 && dir2.dy !== 0)) {
-      // Go vertical first, then horizontal
-      segments.push(`L ${ex1} ${ey2}`);
-      segments.push(`L ${ex2} ${ey2}`);
+      midPoints.push({ x: ex1, y: ey2 });
     } else {
-      // Default: midpoint routing
       const midX = ex1 + dx / 2;
       const midY = ey1 + dy / 2;
       if (Math.abs(dx) > Math.abs(dy)) {
-        segments.push(`L ${midX} ${ey1}`);
-        segments.push(`L ${midX} ${ey2}`);
+        midPoints.push({ x: midX, y: ey1 });
+        midPoints.push({ x: midX, y: ey2 });
       } else {
-        segments.push(`L ${ex1} ${midY}`);
-        segments.push(`L ${ex2} ${midY}`);
+        midPoints.push({ x: ex1, y: midY });
+        midPoints.push({ x: ex2, y: midY });
       }
-      segments.push(`L ${ex2} ${ey2}`);
     }
 
-    segments.push(`L ${x2} ${y2}`);
-    return segments.join(' ');
+    // Assemble full point list
+    let points = [
+      { x: x1, y: y1 },
+      { x: ex1, y: ey1 },
+      ...midPoints,
+      { x: ex2, y: ey2 },
+      { x: x2, y: y2 },
+    ];
+
+    // ── Obstacle avoidance ───────────────────────────────────────────
+    if (sourceId && targetId) {
+      const obstacles = this._getObstacles(sourceId, targetId);
+      if (obstacles.length > 0) {
+        points = this._avoidObstacles(points, obstacles);
+      }
+    }
+
+    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   }
 
   /** Get the outward direction vector for a port */
@@ -477,6 +485,124 @@ export class ConnectionManager {
       case 'right':  return { dx: 1, dy: 0 };
       default:       return { dx: 0, dy: -1 };
     }
+  }
+
+  // ── Node-Avoidance Routing ──────────────────────────────────────────
+
+  /** Collect bounding boxes of all nodes except source and target (inflated by MARGIN) */
+  _getObstacles(sourceId, targetId) {
+    const MARGIN = 15;
+    const obstacles = [];
+    for (const [id, node] of this.nodeManager.nodes) {
+      if (id === sourceId || id === targetId) continue;
+      const w = node.el.offsetWidth;
+      const h = node.el.offsetHeight;
+      if (w === 0 || h === 0) continue; // skip hidden / not-yet-rendered nodes
+      obstacles.push({
+        left:   node.x - MARGIN,
+        top:    node.y - MARGIN,
+        right:  node.x + w + MARGIN,
+        bottom: node.y + h + MARGIN,
+      });
+    }
+    return obstacles;
+  }
+
+  /** Check if an orthogonal segment intersects a rectangle */
+  _segmentHitsRect(ax, ay, bx, by, rect) {
+    const minX = Math.min(ax, bx), maxX = Math.max(ax, bx);
+    const minY = Math.min(ay, by), maxY = Math.max(ay, by);
+    const isHoriz = Math.abs(ay - by) < 0.5;
+    const isVert  = Math.abs(ax - bx) < 0.5;
+    if (isHoriz) {
+      return ay > rect.top && ay < rect.bottom && maxX > rect.left && minX < rect.right;
+    }
+    if (isVert) {
+      return ax > rect.left && ax < rect.right && maxY > rect.top && minY < rect.bottom;
+    }
+    return false;
+  }
+
+  /** Run up to 3 passes — each pass fixes one layer of node collisions.
+   *  The first 2 and last 2 segments are EXEMPT (they anchor to port positions). */
+  _avoidObstacles(points, obstacles) {
+    let result = points;
+    for (let pass = 0; pass < 3; pass++) {
+      let changed = false;
+      const out = [result[0]];
+      const len = result.length;
+
+      for (let i = 1; i < len; i++) {
+        const p1 = result[i - 1];
+        const p2 = result[i];
+
+        // Protect anchor segments:
+        //   i=1  → port1 to extension1 (must touch the port)
+        //   i=2  → extension1 to first waypoint (connected to extension stub)
+        //   i=len-1 → extension2 to port2 (must touch the port)
+        //   i=len-2 → last waypoint to extension2 (connected to extension stub)
+        const isAnchor = i <= 2 || i >= len - 2;
+
+        // Only reroute non-anchor (middle) segments
+        let hit = null;
+        if (!isAnchor) {
+          for (const obs of obstacles) {
+            if (this._segmentHitsRect(p1.x, p1.y, p2.x, p2.y, obs)) {
+              hit = obs;
+              break;
+            }
+          }
+        }
+
+        if (hit) {
+          this._detourAroundRect(p1, p2, hit).forEach(dp => out.push(dp));
+          changed = true;
+        }
+        out.push(p2);
+      }
+
+      result = out;
+      if (!changed) break;
+    }
+    return result;
+  }
+
+  /** Insert waypoints that route an orthogonal segment around a rectangle */
+  _detourAroundRect(p1, p2, rect) {
+    const isHoriz = Math.abs(p1.y - p2.y) < 0.5;
+
+    if (isHoriz) {
+      // Horizontal segment — detour above or below the node
+      const y = p1.y;
+      const newY = Math.abs(y - rect.top) <= Math.abs(y - rect.bottom)
+        ? rect.top : rect.bottom;
+
+      // Order entry/exit by direction of travel
+      const entryX = p1.x < p2.x ? rect.left : rect.right;
+      const exitX  = p1.x < p2.x ? rect.right : rect.left;
+
+      return [
+        { x: entryX, y },
+        { x: entryX, y: newY },
+        { x: exitX,  y: newY },
+        { x: exitX,  y },
+      ];
+    }
+
+    // Vertical segment — detour left or right of the node
+    const x = p1.x;
+    const newX = Math.abs(x - rect.left) <= Math.abs(x - rect.right)
+      ? rect.left : rect.right;
+
+    const entryY = p1.y < p2.y ? rect.top : rect.bottom;
+    const exitY  = p1.y < p2.y ? rect.bottom : rect.top;
+
+    return [
+      { x, y: entryY },
+      { x: newX, y: entryY },
+      { x: newX, y: exitY },
+      { x, y: exitY },
+    ];
   }
 
   // ── Wire Jump System ──────────────────────────────────────────────

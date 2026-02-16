@@ -27,9 +27,25 @@ import { IdeaInputModal } from './ui/IdeaInputModal.js';
 import { computeLayout } from './ai/IdeaGenerator.js';
 import { WorkspaceSettingsModal } from './ui/WorkspaceSettingsModal.js';
 
-// Phase 4 — Desktop Orchestration
+// Phase 8 — Commerce Nodes
+import { CommerceNodeConfig } from './ui/CommerceNodeConfig.js';
+import { CredentialVault } from './security/CredentialVault.js';
+
+// Phase 4 — Desktop & Browser Orchestration
 import { OrchestrationEngine } from './orchestration/OrchestrationEngine.js';
 import { EnvironmentDetector } from './orchestration/EnvironmentDetector.js';
+import { serializeMindMap } from './export/MindMapSerializer.js';
+import { generateWorkflowPrompt } from './export/WorkflowPromptGenerator.js';
+import { MCPConfigGenerator } from './integrations/MCPConfigGenerator.js';
+import { ConnectionTester } from './integrations/ConnectionTester.js';
+
+// Sprint 5 — Agent Framework + COO Agent
+import { ExecutionEngine } from './agents/ExecutionEngine.js';
+import { COOAgent } from './agents/COOAgent.js';
+import { ContextManager } from './agents/ContextManager.js';
+
+// Report prompt templates (extracted from main.js for clarity)
+import { buildReportPrompt, summarizeMap } from './prompts/ReportPrompts.js';
 
 class MindMapperApp {
   constructor() {
@@ -72,20 +88,38 @@ class MindMapperApp {
       fitToContent: () => this._fitToContent(),
       getNodeManager: () => this.nodeManager,
       getConnectionManager: () => this.connectionManager,
+      bus: this.bus,
     });
     this.fileMenu = new FileMenu(this.fileManager);
 
-    // Phase 3 — Agent Panel
-    this.agentPanel = new AgentPanel(this.bus);
-
-    // Phase 4 — Orchestration Engine (desktop only)
+    // ─── Orchestration Engine (session lifecycle + bridge management) ───
+    // Owns the session state machine, bridge selection (Tauri vs browser),
+    // prompt serialization, and session persistence via SessionStore.
     this.orchestrationEngine = new OrchestrationEngine(this.bus, {
       nodeManager: this.nodeManager,
       connectionManager: this.connectionManager,
     });
 
+    // ─── Execution Engine (round-based multi-agent coordination) ───
+    // Builds on top of OrchestrationEngine. Manages the COO planning loop,
+    // agent task assignment, round execution, CEO approval gates, and
+    // cost tracking. Uses the browser bridge from OrchestrationEngine.
+    this.executionEngine = new ExecutionEngine(
+      this.bus,
+      this.orchestrationEngine.browserBridge,
+      {} // projectContext populated at runtime
+    );
+
+    // Phase 3 — Agent Panel (with engine reference for CEO commands)
+    this.agentPanel = new AgentPanel(this.bus, this.orchestrationEngine);
+
     // Phase 5 — Workspace Settings Modal
     this.workspaceSettingsModal = new WorkspaceSettingsModal(this.bus);
+
+    // Phase 8 — Credential Vault + Commerce Node Config Panel + Connection Tester
+    this.credentialVault = new CredentialVault(this.bus);
+    this.connectionTester = new ConnectionTester(this.bus, this.credentialVault);
+    this.commerceNodeConfig = new CommerceNodeConfig(this.bus, this.nodeManager, this.credentialVault, this.connectionTester);
 
     // Phase 3 — Prompt Export Modal (core feature)
     this.promptExportModal = new PromptExportModal(
@@ -105,20 +139,18 @@ class MindMapperApp {
     // Toolbar: Templates button
     document.getElementById('btn-presets')?.addEventListener('click', () => this.presetModal.show());
 
-    // Toolbar: Generate Prompt button
-    document.getElementById('btn-generate-prompt')?.addEventListener('click', () => this.promptExportModal.show());
-
     // Toolbar: AI Generate Mind Map button
     document.getElementById('btn-ai-generate')?.addEventListener('click', () => this.ideaInputModal.show());
 
     // Toolbar: Workspace Settings button
     document.getElementById('btn-workspace-settings')?.addEventListener('click', () => this.workspaceSettingsModal.show());
 
-    // Toolbar: Run Agents button (Phase 4)
-    document.getElementById('btn-run-agents')?.addEventListener('click', () => this._runAgents());
-
     // Toolbar: Clean Layout button
     document.getElementById('btn-clean-layout')?.addEventListener('click', () => this._cleanLayout());
+
+    // Agent Panel bus events — Generate Prompt & Agent Config (moved from toolbar)
+    this.bus.on('ceo:generate-prompt-request', () => this.promptExportModal.show());
+    this.bus.on('ceo:agent-config-request', () => this._generateAgentConfig());
 
     // Orchestration control events from AgentPanel
     this.bus.on('orchestration:pause-request', () => {
@@ -132,6 +164,164 @@ class MindMapperApp {
     this.bus.on('orchestration:cancel-request', async () => {
       try { await this.orchestrationEngine.cancelSession(); }
       catch (e) { console.warn('Cancel failed:', e.message); }
+    });
+
+    // ─── P1.6 — CEO Command Bar Events ──────────────────────────────
+    this.bus.on('ceo:launch-request', () => this._runAgents());
+
+    // Sprint 5 — Multi-Agent Orchestration (preview)
+    this.bus.on('ceo:multi-agent-request', () => this._runMultiAgentPreview());
+
+    this.bus.on('ceo:retry-request', async () => {
+      if (!this.orchestrationEngine.lastPrompt) {
+        console.warn('No previous session to retry.');
+        return;
+      }
+      this.agentPanel.open();
+      try {
+        await this.orchestrationEngine.startSession(
+          this.orchestrationEngine.lastOptions || {}
+        );
+      } catch (err) {
+        console.error('Retry failed:', err);
+      }
+    });
+
+    this.bus.on('ceo:copy-prompt-request', () => {
+      // Generate prompt from current mind map and copy to clipboard
+      try {
+        const nodes = this.nodeManager.serialize();
+        const connections = this.connectionManager.serialize();
+        const serialized = serializeMindMap(nodes, connections, {});
+        const prompt = generateWorkflowPrompt(serialized, {});
+        navigator.clipboard.writeText(prompt);
+      } catch (err) {
+        console.warn('Copy prompt failed — use the Generate Prompt modal instead.', err);
+      }
+    });
+
+    // ─── P1.6 — CEO Report Buttons (role-specific agent jobs) ──────
+    this.bus.on('ceo:report-request', async ({ type, label }) => {
+      try {
+        // Pre-check for API key in browser mode
+        if (!EnvironmentDetector.isTauri) {
+          const hasKey = this.orchestrationEngine.hasBrowserApiKey();
+          if (!hasKey) {
+            const key = prompt(
+              `Running "${label}" requires an API key.\n\n` +
+              'Enter your Anthropic API key:\n' +
+              '(Get one at console.anthropic.com)\n' +
+              'Your key is stored locally and never sent to our servers.'
+            );
+            if (!key) return;
+            this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
+          }
+        }
+
+        const nodes = this.nodeManager.serialize();
+        const connections = this.connectionManager.serialize();
+        const serialized = serializeMindMap(nodes, connections, {});
+
+        const reportPrompt = this._buildReportPrompt(type, label, serialized);
+        if (!reportPrompt) {
+          alert(`Unknown report type: ${type}`);
+          return;
+        }
+
+        this.agentPanel.open();
+
+        // Use the orchestration engine to run the report
+        await this.orchestrationEngine.startSession({
+          customPrompt: reportPrompt,
+          reportType: type,
+          reportLabel: label,
+          handsOff: this.agentPanel.handsOff,
+        });
+      } catch (err) {
+        console.error(`Report "${label}" failed:`, err);
+        alert(`Failed to start ${label}: ${err.message}`);
+      }
+    });
+
+    // ─── Implement Recommendations — Create nodes from AI audit actions ───
+    this.bus.on('ceo:implement-recommendations', ({ actions, mode }) => {
+      if (!actions || actions.length === 0) return;
+
+      const isAll = mode === 'all';
+      const toImplement = isAll ? actions : [actions[0]];
+      const existingNodes = this.nodeManager.serialize();
+
+      // Find rightmost edge for new node placement
+      let maxX = 0;
+      let baseY = 200;
+      for (const n of existingNodes) {
+        if (n.x > maxX) { maxX = n.x; baseY = n.y; }
+      }
+      const startX = maxX + 300;
+
+      const created = [];
+      const PRIORITY_COLORS = {
+        critical: '#ff2d78',
+        high: '#ff6e40',
+        medium: '#ffc107',
+        low: '#00ff88',
+      };
+
+      // Create nodes for each recommendation
+      for (let i = 0; i < toImplement.length; i++) {
+        const action = toImplement[i];
+        const y = baseY + (i * 140) - ((toImplement.length - 1) * 70);
+        const color = PRIORITY_COLORS[action.priority] || '#00e5ff';
+
+        const nodeData = this.nodeManager.createNode(startX, y, {
+          text: action.title,
+          color,
+          nodeType: action.nodeType || 'feature',
+          priority: action.priority || 'medium',
+          phase: action.phase ?? null,
+          agentNotes: action.description || '',
+        });
+        created.push({ nodeData, action });
+      }
+
+      // Connect to parent nodes (match by text, case-insensitive)
+      for (const { nodeData, action } of created) {
+        if (!action.parent) continue;
+        const parentText = action.parent.toLowerCase().trim();
+
+        // Search existing nodes for a text match
+        let parentNode = null;
+        this.nodeManager.nodes.forEach(n => {
+          if (n.text && n.text.toLowerCase().trim() === parentText) {
+            parentNode = n;
+          }
+        });
+
+        if (parentNode) {
+          // Find best ports for the connection
+          try {
+            this.connectionManager.createConnection(
+              parentNode.id, 'right',
+              nodeData.id, 'left',
+              { directed: 'forward' }
+            );
+          } catch (e) {
+            console.warn(`Could not connect ${action.title} to ${action.parent}:`, e.message);
+          }
+        }
+      }
+
+      // Auto-layout after adding nodes
+      setTimeout(() => {
+        this._cleanLayout();
+        this.bus.emit('state:changed');
+      }, 200);
+
+      // Notify the agent panel
+      this.bus.emit('orchestration:progress', {
+        type: 'text',
+        content: `\n\n✅ **${created.length} node(s) implemented on canvas.**\n`,
+      });
     });
 
     // Bind global shortcuts
@@ -152,7 +342,7 @@ class MindMapperApp {
     // Push initial history state
     this.history.push(this._getState());
 
-    console.log('%c⚡ MindMapper initialized', 'color: #00e5ff; font-weight: bold; font-size: 14px;');
+    // App initialized
   }
 
   _bindKeyboard() {
@@ -238,10 +428,12 @@ class MindMapperApp {
     const check = () => {
       clearTimeout(readinessTimer);
       readinessTimer = setTimeout(() => {
+        const nodes = this.nodeManager.serialize();
         const result = validateMindMap(
-          this.nodeManager.serialize(),
+          nodes,
           this.connectionManager.serialize()
         );
+        result.nodeCount = nodes.length;
         this.bus.emit('agent:readiness', result);
       }, 500);
     };
@@ -253,7 +445,8 @@ class MindMapperApp {
     return {
       nodes: this.nodeManager.serialize(),
       connections: this.connectionManager.serialize(),
-      viewport: this.viewport.getState()
+      viewport: this.viewport.getState(),
+      projectMeta: this.fileManager ? this.fileManager.getProjectMeta() : undefined,
     };
   }
 
@@ -273,6 +466,10 @@ class MindMapperApp {
       this.nodeManager.deserialize(saved.nodes);
       this.connectionManager.deserialize(saved.connections);
       this.viewport.setState(saved.viewport);
+      // Restore project title/description
+      if (saved.projectMeta && this.fileManager) {
+        this.fileManager.setProjectMeta(saved.projectMeta);
+      }
       this.history.resume();
       this.bus.emit('state:loaded');
       // Hide help hint if there are nodes
@@ -333,48 +530,369 @@ class MindMapperApp {
   }
 
   /**
-   * Phase 4 — Launch Claude Code orchestration session.
-   * Validates readiness, prompts for output dir, starts the engine.
+   * Phase 4+5 — Launch agent execution via the COO agent pipeline.
+   *
+   * Flow: CEO clicks Launch → validate → create COO → ExecutionEngine.startSession →
+   *       COO.execute(task) → BrowserAgentBridge API call → stream to AgentPanel →
+   *       COO parses plan → plan stored → agent roster populated
    */
   async _runAgents() {
-    // Guard: desktop only
+    // ── Pre-flight: API key ───────────────────────────────────────────
     if (!EnvironmentDetector.isTauri) {
-      alert(
-        'Run Agents requires the MindMapper desktop app.\n\n' +
-        'Use "Generate Prompt" to copy the workflow prompt and paste it into Claude Code manually.'
-      );
-      return;
+      const hasKey = this.orchestrationEngine.hasBrowserApiKey();
+      if (!hasKey) {
+        const key = prompt(
+          'Enter your Anthropic API key to run agents from the browser:\n\n' +
+          '(Get one at console.anthropic.com)\n' +
+          'Your key is stored locally and never sent to our servers.'
+        );
+        if (!key) return;
+        this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
+      }
     }
 
-    // Validate mind map readiness
-    const validation = validateMindMap(
-      this.nodeManager.serialize(),
-      this.connectionManager.serialize()
-    );
+    // ── Pre-flight: mind map readiness ─────────────────────────────────
+    const nodes = this.nodeManager.serialize();
+    const connections = this.connectionManager.serialize();
+    const validation = validateMindMap(nodes, connections);
+
     if (!validation.valid) {
       const issues = validation.errors.map(e => `• ${e}`).join('\n');
       alert(`Mind map is not ready:\n\n${issues}\n\nFix these issues before running agents.`);
       return;
     }
 
-    // Prompt for output directory
-    const outputDir = prompt(
-      'Enter the output directory for Claude Code:\n(This is where generated files will go)',
-      '.'
-    );
-    if (!outputDir) return; // User cancelled
+    // ── Serialize the mind map ─────────────────────────────────────────
+    const projectName = this.fileManager?.currentFileName || 'Untitled';
+    const serialized = serializeMindMap(nodes, connections, { projectName });
 
-    // Get hands-off preference from AgentPanel
-    const handsOff = this.agentPanel.handsOff;
+    // Build project context for the COO
+    const projectContext = {
+      projectName: serialized.projectName || projectName,
+      stack: serialized.stack || '',
+      features: serialized.nodes?.filter(n => n.type === 'feature' || n.type === 'requirement').map(n => n.label || n.text) || [],
+      constraints: serialized.nodes?.filter(n => n.type === 'constraint').map(n => n.label || n.text) || [],
+    };
 
-    try {
-      await this.orchestrationEngine.startSession({
-        outputDir,
-        handsOff,
-      });
-    } catch (err) {
-      console.error('Failed to start orchestration session:', err);
+    // ── Create the COO agent with the bridge ───────────────────────────
+    const bridge = this.orchestrationEngine.browserBridge;
+    const cooAgent = new COOAgent({
+      bus: this.bus,
+      bridge,
+      projectContext,
+    });
+
+    // Update the execution engine's project context
+    this.executionEngine._projectContext = projectContext;
+    this.executionEngine._contextManager = new ContextManager(projectContext);
+
+    // ── Open the Agent Panel ───────────────────────────────────────────
+    this.agentPanel.open();
+
+    // ── Register the agent roster ─────────────────────────────────────
+    const statusDisplay = this.agentPanel.agentStatusDisplay;
+    statusDisplay.clear();
+
+    const displayNames = {
+      cto: 'CTO / Architect', cfo: 'CFO / Budget',
+      frontend: 'Frontend UI/UX', backend: 'Backend Dev', devops: 'DevOps Architect',
+      qa: 'QA Engineer', researcher: 'Deep Researcher', da: "Devil's Advocate",
+      sentinel: 'Sentinel', documenter: 'Documenter', coo: 'COO',
+      'token-auditor': 'Token Auditor', 'api-cost-auditor': 'Cost Auditor',
+      'project-auditor': 'Project Auditor',
+    };
+
+    // Show COO as active
+    statusDisplay.registerAgent('coo', 'COO / Orchestrator', 'standard');
+    statusDisplay.updateStatus('coo', 'thinking');
+
+    // Show the full team
+    const registry = this.executionEngine?.registry;
+    if (registry) {
+      for (const entry of registry.getAll()) {
+        const id = entry.role?.id;
+        if (!id || entry.config?.isHuman) continue;
+        if (!statusDisplay._agents.has(id)) {
+          const name = displayNames[id] || entry.role?.label || id;
+          const tier = entry.config?.tier || 'standard';
+          statusDisplay.registerAgent(id, name, tier);
+        }
+      }
     }
+    statusDisplay.show();
+
+    // ── Execute via ExecutionEngine + COO ──────────────────────────────
+    try {
+      const { plan } = await this.executionEngine.startSession({
+        mindMapData: serialized,
+        handsOff: this.agentPanel.handsOff,
+        cooAgent,
+      });
+
+      // Update COO status
+      statusDisplay.updateStatus('coo', 'done');
+
+      // Register plan tasks in the roster
+      if (plan?.phases) {
+        const allTasks = plan.phases.flatMap(p =>
+          p.milestones?.flatMap(m => m.tasks || []) || []
+        );
+        statusDisplay.registerFromPlan(allTasks, displayNames);
+      }
+
+      // Emit plan summary as a system message for the panel
+      if (plan?.phases) {
+        const planSummary = [
+          `\n\n---\n## 📋 Execution Plan Ready`,
+          `**${plan.phases.length} phases** | **${plan.estimatedRounds || '?'} estimated rounds**`,
+          '',
+          ...plan.phases.map(p => {
+            const tasks = p.milestones?.flatMap(m => m.tasks || []) || [];
+            const taskList = tasks.map(t => `  - \`${t.assignedTo}\` → ${t.title} *(${t.tier})*`).join('\n');
+            return `### ${p.name}\n${tasks.length} tasks:\n${taskList}`;
+          }),
+          '',
+          `> **Summary:** ${plan.summary || 'Plan created successfully.'}`,
+          '',
+          `*Plan generated by COO agent. Click Launch again to execute the next phase.*`,
+        ].join('\n');
+
+        this.bus.emit('orchestration:progress', {
+          type: 'text',
+          content: planSummary,
+        });
+      }
+
+      console.log('[Agent Execution] COO plan generated:', plan);
+
+    } catch (err) {
+      console.error('[Agent Execution] COO planning failed:', err);
+      statusDisplay.updateStatus('coo', 'error');
+
+      // Fallback: offer local plan generation
+      this.bus.emit('orchestration:progress', {
+        type: 'text',
+        content: `\n\n⚠️ **COO agent planning failed:** ${err.message}\n\n` +
+          `Generating a local fallback plan from your mind map...\n`,
+      });
+
+      // Generate local plan as fallback
+      try {
+        const fallbackPlan = cooAgent.createLocalPlan(serialized, {
+          projectName: projectContext.projectName,
+          stack: projectContext.stack,
+        });
+        this.executionEngine._currentPlan = fallbackPlan;
+
+        const allTasks = fallbackPlan.phases.flatMap(p =>
+          p.milestones?.flatMap(m => m.tasks || []) || []
+        );
+        statusDisplay.registerFromPlan(allTasks, displayNames);
+        statusDisplay.updateStatus('coo', 'done');
+
+        this.bus.emit('orchestration:progress', {
+          type: 'text',
+          content: `✅ **Local fallback plan created:** ${fallbackPlan.phases.length} phases, ` +
+            `${fallbackPlan.estimatedRounds} rounds.\n\n` +
+            `> This plan was generated locally without an API call. ` +
+            `Set your API key in Workspace Settings for AI-powered planning.\n`,
+        });
+      } catch (fallbackErr) {
+        console.error('[Agent Execution] Fallback plan also failed:', fallbackErr);
+      }
+    }
+  }
+
+  /**
+   * Sprint 5 — Multi-Agent Orchestration Preview.
+   * Uses the COO agent's local planner to generate a structured
+   * phase plan from the current mind map, displayed in the Agent Panel.
+   */
+  async _runMultiAgentPreview() {
+    // Serialize the mind map
+    const nodes = this.nodeManager.serialize();
+    const connections = this.connectionManager.serialize();
+    const serialized = serializeMindMap(nodes, connections, {
+      projectName: this.fileManager?.currentFileName || 'Untitled',
+    });
+
+    // Create a COO agent (no bridge needed for local planning)
+    const cooAgent = new COOAgent({
+      bus: this.bus,
+      bridge: this.orchestrationEngine.browserBridge,
+      projectContext: {
+        projectName: serialized.projectName || 'Untitled',
+        stack: serialized.stack || '',
+        features: serialized.nodes?.filter(n => n.type === 'feature').map(n => n.label) || [],
+        constraints: serialized.nodes?.filter(n => n.type === 'constraint').map(n => n.label) || [],
+      },
+    });
+
+    // Generate local plan (no API call)
+    const plan = cooAgent.createLocalPlan(serialized, {
+      projectName: serialized.projectName || 'Untitled',
+      stack: serialized.stack || '',
+    });
+
+    // Display the plan in the agent panel
+    this.agentPanel.open();
+
+    // Emit plan as a system message for display
+    const planSummary = [
+      `## 🧠 Multi-Agent Execution Plan`,
+      `**${plan.phases.length} phases** | **${plan.estimatedRounds} estimated rounds**`,
+      '',
+      ...plan.phases.map(p => {
+        const taskCount = p.milestones.reduce((sum, m) => sum + (m.tasks?.length || 0), 0);
+        const tasks = p.milestones.flatMap(m => m.tasks || []);
+        const taskList = tasks.map(t => `  - \`${t.assignedTo}\` → ${t.title} *(${t.tier})*`).join('\n');
+        return `### ${p.name}\n${taskCount} tasks:\n${taskList}`;
+      }),
+      '',
+      `> **Summary:** ${plan.summary}`,
+      '',
+      `*This is a local preview. Click "Launch" to execute with AI agents.*`,
+    ].join('\n');
+
+    this.bus.emit('orchestration:progress', {
+      type: 'text',
+      content: planSummary,
+    });
+
+    // Store the plan on the execution engine
+    this.executionEngine._currentPlan = plan;
+
+    // Sprint 5 — Register agents in the status display grid
+    const allTasks = plan.phases.flatMap(p =>
+      p.milestones.flatMap(m => m.tasks || [])
+    );
+    const statusDisplay = this.agentPanel.agentStatusDisplay;
+    statusDisplay.clear();
+
+    // Agent display names lookup
+    const displayNames = {
+      cto: 'CTO / Architect', cfo: 'CFO / Budget',
+      frontend: 'Frontend UI/UX', backend: 'Backend Dev', devops: 'DevOps Architect',
+      qa: 'QA Engineer', researcher: 'Deep Researcher', da: "Devil's Advocate",
+      sentinel: 'Sentinel', documenter: 'Documenter', coo: 'COO',
+      'token-auditor': 'Token Auditor', 'api-cost-auditor': 'Cost Auditor',
+      'project-auditor': 'Project Auditor', 'qa-tester': 'QA Engineer',
+      'devils-advocate': "Devil's Advocate", 'deep-researcher': 'Deep Researcher',
+    };
+
+    statusDisplay.registerFromPlan(allTasks, displayNames);
+
+    // Ensure the full team is visible, even agents without current tasks.
+    // AgentRegistry.getAll() returns every registered role; skip the human CEO.
+    const registry = this.executionEngine?.registry;
+    if (registry) {
+      for (const entry of registry.getAll()) {
+        const id = entry.role?.id;
+        if (!id || entry.config?.isHuman) continue;          // skip CEO
+        if (!statusDisplay._agents.has(id)) {
+          const name = displayNames[id] || entry.role.label || id;
+          const tier = entry.config?.tier || 'standard';
+          statusDisplay.registerAgent(id, name, tier);
+        }
+      }
+    }
+
+    statusDisplay.show();
+
+    console.log('[Sprint 5] Multi-agent plan generated:', plan);
+  }
+
+  /**
+   * P1.5 — Generate Agent Config: export MCP server config from commerce nodes.
+   */
+  async _generateAgentConfig() {
+    // Check for commerce nodes
+    const allNodes = [...this.nodeManager.nodes.values()];
+    const commerceNodes = allNodes.filter(n => n.commerceType);
+
+    if (commerceNodes.length === 0) {
+      this.bus.emit('agent:message', {
+        role: 'agent',
+        content:
+          '## ⚙️ Agent Config — No Commerce Nodes Found\n\n' +
+          'This button exports your **commerce integration nodes** ' +
+          '(Stripe, Shopify, SuperHive, etc.) into an **MCP server config file** ' +
+          'that AI agents can use as tools.\n\n' +
+          '### How to use it:\n' +
+          '1. **Right-click** on the canvas\n' +
+          '2. Select **Add Commerce Node**\n' +
+          '3. Choose an integration (Stripe, Shopify, GitHub, etc.)\n' +
+          '4. Optionally configure credentials via the node\'s settings\n' +
+          '5. Click **⚙ Agent Config** again to export\n\n' +
+          '> 💡 Regular text nodes labeled "Stripe" won\'t work — ' +
+          'they must be created as **commerce-typed nodes** from the context menu.',
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    // Prompt to unlock vault if needed
+    if (!this.credentialVault.isUnlocked() && this.credentialVault.hasVault()) {
+      const passphrase = prompt(
+        'Your credential vault is locked.\n' +
+        'Enter your vault passphrase to decrypt credentials for the config export:'
+      );
+      if (passphrase) {
+        const ok = await this.credentialVault.unlock(passphrase);
+        if (!ok) {
+          this.bus.emit('agent:message', {
+            role: 'agent',
+            content: '## ⚙️ Agent Config — Vault Locked\n\n' +
+              '❌ Failed to unlock credential vault. Check your passphrase and try again.\n\n' +
+              '> The config can still be exported without credentials — ' +
+              'it will use placeholder values.',
+            timestamp: Date.now(),
+          });
+          return;
+        }
+      }
+    }
+
+    const generator = new MCPConfigGenerator(this.nodeManager, this.credentialVault);
+    const { json, summaryText } = await generator.export();
+
+    // Copy to clipboard
+    let clipboardOk = false;
+    try {
+      await navigator.clipboard.writeText(json);
+      clipboardOk = true;
+    } catch { /* clipboard may be blocked */ }
+
+    // Offer download
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mcp-config-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // Show success in agent panel
+    this.bus.emit('agent:message', {
+      role: 'agent',
+      content:
+        '## ✅ Agent Config — Export Complete\n\n' +
+        `${summaryText}\n\n` +
+        `- ${clipboardOk ? '✅' : '⚠️'} ${clipboardOk ? 'Copied to clipboard' : 'Clipboard access blocked — use the downloaded file'}\n` +
+        '- 📥 Config file downloaded\n\n' +
+        '### Next step:\n' +
+        'Paste the config into your **Claude Code MCP server settings** ' +
+        'or import the downloaded JSON file into your AI agent platform.',
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Build a role-specific report prompt.
+   * Delegates to the extracted ReportPrompts module.
+   */
+  _buildReportPrompt(type, label, serialized) {
+    return buildReportPrompt(type, label, serialized);
   }
 
   /**

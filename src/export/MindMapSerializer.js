@@ -10,7 +10,7 @@
  * derived from directed connections and topological ordering.
  */
 
-import { NODE_TYPES } from '../nodes/NodeManager.js';
+import { NODE_TYPES, COMMERCE_NODE_TYPES } from '../nodes/NodeManager.js';
 
 /**
  * @typedef {Object} SerializedMindMap
@@ -22,6 +22,7 @@ import { NODE_TYPES } from '../nodes/NodeManager.js';
  * @property {Object[]} references - Reference/research nodes
  * @property {Object[]} techNotes - Technical note nodes
  * @property {Object[]} general - General/uncategorized nodes
+ * @property {Object[]} integrations - Commerce/integration nodes (Phase 8)
  * @property {Object[]} dependencies - Connection-based dependency graph
  * @property {Object[]} executionOrder - Topologically sorted node sequence
  * @property {Object} stats - Summary statistics
@@ -67,6 +68,28 @@ export function serializeMindMap(nodes, connections, options = {}) {
     } else {
       categories.general.push(entry);
     }
+  });
+
+  // ─── Extract integration/commerce nodes (Phase 8) ──────────────────
+  const integrations = [];
+  nodes.forEach(node => {
+    if (!node.commerceType) return;
+    const commerceDef = COMMERCE_NODE_TYPES.find(c => c.id === node.commerceType);
+    if (!commerceDef) return;
+
+    integrations.push({
+      id: node.id,
+      text: (node.text || '').trim(),
+      commerceType: node.commerceType,
+      category: commerceDef.category,
+      label: commerceDef.label,
+      icon: commerceDef.icon,
+      // Include only non-secret credential fields for prompt context
+      configuredFields: commerceDef.fields
+        .filter(f => f.type !== 'password' && node.credentials?.[f.key])
+        .map(f => ({ key: f.key, label: f.label, value: node.credentials[f.key] })),
+      hasCredentials: commerceDef.fields.some(f => node.credentials?.[f.key]),
+    });
   });
 
   // ─── Sort each category by priority ────────────────────────────────
@@ -140,12 +163,14 @@ export function serializeMindMap(nodes, connections, options = {}) {
     generalCount: categories.general.length,
     criticalCount: nodes.filter(n => n.priority === 'critical').length,
     highCount: nodes.filter(n => n.priority === 'high').length,
+    integrationCount: integrations.length,
   };
 
   return {
     projectName,
     ceoVision: options.ceoVision || '',
     ...categories,
+    integrations,
     dependencies,
     executionOrder,
     rootNodes: rootNodes.map(n => ({ id: n.id, text: (n.text || '').trim() })),

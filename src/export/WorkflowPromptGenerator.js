@@ -29,9 +29,10 @@ export function generateWorkflowPrompt(data, options = {}) {
   const model = options.model || 'claude-4.6';
   const mode = options.mode || 'planning';
   const stack = options.stack || _inferStack(data);
+  const compact = options.compact || false;
 
-  const taskDef = _buildTaskDefinition(data, { model, mode, stack, ...options });
-  const markdown = _formatAsMarkdown(taskDef, data);
+  const taskDef = _buildTaskDefinition(data, { model, mode, stack, compact, ...options });
+  const markdown = _formatAsMarkdown(taskDef, data, { compact });
 
   return markdown;
 }
@@ -49,8 +50,8 @@ function _buildTaskDefinition(data, options) {
     goal: _buildGoal(data),
     ...routing,
     workspace_instructions: options.workspaceInstructions || _buildWorkspaceInstructions(options),
-    virtual_team: _buildVirtualTeam(data),
-    project_context: _buildProjectContext(data),
+    virtual_team: options.compact ? _buildCompactVirtualTeam(data) : _buildVirtualTeam(data),
+    project_context: _buildProjectContext(data, options),
     execution_strategy: _buildExecutionStrategy(data),
     deliverables: _buildDeliverables(data),
     constraints_and_style: _buildConstraints(data),
@@ -99,6 +100,48 @@ function _buildWorkspaceInstructions(options) {
       "Run builds and tests after each significant change to catch regressions early."
     ]
   };
+}
+
+// ─── Compact Virtual Team Builder ───────────────────────────────────────
+// Compressed version of _buildVirtualTeam for P2.3 prompt streamlining.
+// Reduces ~530 lines of role definitions to ~60 lines of essentials.
+
+function _buildCompactVirtualTeam(_data) {
+  return {
+    _protocol: {
+      principle: "Full executive-managed project with ALL 15 roles active from kickoff through deliverable. No silent handoffs — every role engaged, every milestone.",
+      reporting: "CEO ← COO ← [DA, DevOps, QA, Documenter, CD]. CTO ← [CFO, Sentinel, Researcher, Backend]. CFO ← Auditors. Auditor escalations → full exec suite.",
+      communication: "Agents have ONGOING conversations, not just milestone checkpoints. Cross-functional discussions captured in /docs/decisions.md."
+    },
+    roles: {
+      ceo:       { routing: 'human',    summary: 'The USER. Product visionary. Approves final deliverables.' },
+      coo:       { routing: 'standard', summary: 'Operational command. Translates vision → milestones → sprints. Converts DA findings into agent-specific task lists. Receives deployment and QA reports.' },
+      cto:       { routing: 'opus',     summary: 'Architecture owner. Framework & infra decisions. Receives CFO budget reports, Sentinel advisories, Researcher briefings.' },
+      cfo:       { routing: 'standard', summary: 'Budget guardian. Tracks cost/token by role & tier. Reports refinements to CTO. Receives audit data.' },
+      creative:  { routing: 'opus',     summary: 'Design authority. Owns UI/UX vision, typography, motion, accessibility. Reviews ALL visual output.' },
+      frontend:  { routing: 'standard', summary: 'Implements UI. Reports to Creative Director. Receives docs from Researcher.' },
+      backend:   { routing: 'standard', summary: 'Implements APIs, data, auth. Reports to CTO.' },
+      devops:    { routing: 'standard', summary: 'CI/CD, infra, deployment. Reports readiness to COO at every milestone.' },
+      qa:        { routing: 'standard', summary: 'Writes tests alongside features. Reports coverage to COO.' },
+      researcher:{ routing: 'standard', summary: 'Front-loads knowledge. Pushes task-specific docs to EACH agent proactively.' },
+      da:        { routing: 'standard', summary: 'Devil\'s Advocate. Reviews ALL output. Reports quality findings to COO for taskification.' },
+      sentinel:  { routing: 'opus',     summary: 'Security officer. Continuous audit of auth, data, deps. Has veto power. Reports to CTO.' },
+      documenter:{ routing: 'flash',    summary: 'Captures decisions, artifacts, retrospectives from all agents.' },
+      auditors:  { routing: 'flash',    summary: 'Token Auditor + Project Auditor. Budget tracking & milestone retrospectives → exec suite.' }
+    }
+  };
+}
+
+// ─── Description Truncation (P2.3) ──────────────────────────────────────
+
+const MAX_DESCRIPTION_LENGTH = 150;
+
+/**
+ * Truncate verbose node descriptions for prompt compression
+ */
+function _truncateDescription(text) {
+  if (!text || text.length <= MAX_DESCRIPTION_LENGTH) return text;
+  return text.substring(0, MAX_DESCRIPTION_LENGTH).replace(/\s+\S*$/, '') + '…';
 }
 
 // ─── Virtual Team Builder ──────────────────────────────────────────────
@@ -642,7 +685,8 @@ function _buildVirtualTeam(data) {
 
 // ─── Project Context ───────────────────────────────────────────────────
 
-function _buildProjectContext(data) {
+function _buildProjectContext(data, options = {}) {
+  const compact = options.compact || false;
   const context = {
     product_name: data.projectName,
   };
@@ -654,23 +698,23 @@ function _buildProjectContext(data) {
   // Features list
   if (data.feature.length > 0) {
     context.features = data.feature.map(f => ({
-      name: f.text,
+      name: compact ? _truncateDescription(f.text) : f.text,
       priority: f.priority,
-      ...(f.agentNotes ? { notes: f.agentNotes } : {}),
+      ...(f.agentNotes ? { notes: compact ? _truncateDescription(f.agentNotes) : f.agentNotes } : {}),
     }));
   }
 
   // Constraints
   if (data.constraint.length > 0) {
     context.constraints = data.constraint.map(c => ({
-      constraint: c.text,
+      constraint: compact ? _truncateDescription(c.text) : c.text,
       priority: c.priority,
     }));
   }
 
   // Technical notes
   if (data.techNote.length > 0) {
-    context.technical_notes = data.techNote.map(t => t.text);
+    context.technical_notes = data.techNote.map(t => compact ? _truncateDescription(t.text) : t.text);
   }
 
   // Dependency graph
@@ -680,6 +724,39 @@ function _buildProjectContext(data) {
       to: d.to.text,
       relationship: d.type,
     }));
+  }
+
+  // Integrations / Commerce (Phase 8)
+  if (data.integrations && data.integrations.length > 0) {
+    // Group integrations by category for cleaner prompt structure
+    const byCategory = {};
+    data.integrations.forEach(ig => {
+      const cat = ig.category || 'other';
+      if (!byCategory[cat]) byCategory[cat] = [];
+
+      if (compact) {
+        // P2.3: Lazy credential injection — don't dump raw values into prompt
+        byCategory[cat].push({
+          service: ig.label,
+          type: ig.commerceType,
+          status: ig.hasCredentials ? '✅ configured' : '⬜ not configured',
+        });
+      } else {
+        byCategory[cat].push({
+          service: ig.label,
+          type: ig.commerceType,
+          configured: ig.hasCredentials,
+          ...(ig.configuredFields.length > 0
+            ? { config: ig.configuredFields.reduce((acc, f) => { acc[f.key] = f.value; return acc; }, {}) }
+            : {}),
+        });
+      }
+    });
+    context.integrations = byCategory;
+
+    if (compact) {
+      context._credential_note = 'Credentials are stored in MindMapper\'s encrypted vault. The executing agent should query credentials as needed at runtime rather than carrying them in the prompt.';
+    }
   }
 
   return context;
@@ -891,7 +968,8 @@ function _inferStack(data) {
 
 // ─── Markdown Formatter ─────────────────────────────────────────────────
 
-function _formatAsMarkdown(taskDef, data) {
+function _formatAsMarkdown(taskDef, data, options = {}) {
+  const compact = options.compact || false;
   const timestamp = new Date().toISOString().split('T')[0];
 
   let md = '';
@@ -917,7 +995,8 @@ function _formatAsMarkdown(taskDef, data) {
     md += `### Features (${data.feature.length})\n\n`;
     data.feature.forEach(f => {
       const pri = f.priority !== 'medium' ? ` [${f.priority.toUpperCase()}]` : '';
-      md += `- ${f.text}${pri}\n`;
+      const text = compact ? _truncateDescription(f.text) : f.text;
+      md += `- ${text}${pri}\n`;
     });
     md += '\n';
   }
@@ -925,7 +1004,8 @@ function _formatAsMarkdown(taskDef, data) {
   if (data.constraint.length > 0) {
     md += `### Constraints (${data.constraint.length})\n\n`;
     data.constraint.forEach(c => {
-      md += `- 🔒 ${c.text}\n`;
+      const text = compact ? _truncateDescription(c.text) : c.text;
+      md += `- 🔒 ${text}\n`;
     });
     md += '\n';
   }
@@ -941,7 +1021,8 @@ function _formatAsMarkdown(taskDef, data) {
   if (data.techNote.length > 0) {
     md += `### Technical Notes\n\n`;
     data.techNote.forEach(t => {
-      md += `- 🔧 ${t.text}\n`;
+      const text = compact ? _truncateDescription(t.text) : t.text;
+      md += `- 🔧 ${text}\n`;
     });
     md += '\n';
   }
@@ -953,6 +1034,34 @@ function _formatAsMarkdown(taskDef, data) {
       md += `- ${d.from.text} ${arrow} ${d.to.text}\n`;
     });
     md += '\n';
+  }
+
+  // ─── Integrations & Services (Phase 8) ──────────────────────────
+  if (data.integrations && data.integrations.length > 0) {
+    md += `### Integrations & Services (${data.integrations.length})\n\n`;
+
+    // Group by category
+    const byCategory = {};
+    data.integrations.forEach(ig => {
+      const cat = ig.category || 'other';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(ig);
+    });
+
+    Object.entries(byCategory).forEach(([category, items]) => {
+      const catLabel = category.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      md += `**${catLabel}**\n\n`;
+      items.forEach(ig => {
+        const status = ig.hasCredentials ? '✅' : '⬜';
+        md += `- ${ig.icon} ${ig.label} ${status}`;
+        if (!compact && ig.configuredFields.length > 0) {
+          const fields = ig.configuredFields.map(f => `${f.label}: ${f.value}`).join(', ');
+          md += ` — ${fields}`;
+        }
+        md += '\n';
+      });
+      md += '\n';
+    });
   }
 
   if (data.executionOrder.length > 0) {

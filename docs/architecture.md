@@ -74,10 +74,25 @@ main.js ─── initializes ──┬── EventBus (pub/sub)
                           ├── PresetModal
                           ├── FileManager (→ ReferenceImporter)
                           ├── FileMenu
-                          ├── AgentPanel (sidebar)
+                          ├── AgentPanel (sidebar, with destroy() cleanup)
+                          ├── AgentStatusDisplay (roster readout)
+                          ├── CommerceNodeConfig (commerce credential UI)
                           ├── IdeaInputModal (→ IdeaGenerator)
                           ├── PromptExportModal (→ MindMapSerializer → WorkflowPromptGenerator)
-                          └── MindMapValidator
+                          ├── MindMapValidator
+                          ├── OrchestrationEngine → session lifecycle + bridge management
+                          │     ├── BrowserAgentBridge → browser-mode AI API streaming
+                          │     ├── ClaudeCodeBridge → desktop-mode Claude Code CLI
+                          │     ├── EnvironmentDetector → Tauri vs. browser detection
+                          │     └── SessionStore → session persistence
+                          ├── ExecutionEngine → round-based multi-agent coordination
+                          │     (wraps OrchestrationEngine; manages COO planning,
+                          │      agent task assignment, CEO approval gates)
+                          ├── COOAgent + SpecialistAgents + AgentRegistry
+                          ├── ReportPrompts → CEO report prompt templates
+                          ├── CredentialVault → AES-GCM encrypted key storage
+                          ├── ConnectionTester + MCPConfigGenerator (integrations)
+                          └── WorkspaceSettings (settings persistence)
 ```
 
 All core modules communicate via the **EventBus** — no direct coupling between systems.
@@ -110,7 +125,7 @@ Mind map canvas
     → WorkflowPromptGenerator.generateWorkflowPrompt()
         → JSON task definition:
             - Goal (from CEO vision + mind map summary)
-            - Virtual team (10 roles)
+            - Virtual team (15 roles)
             - Model routing strategy (from ModelTierConfig)
             - Milestones (auto-derived from feature priorities)
             - Deliverables, constraints, workspace instructions
@@ -159,29 +174,34 @@ All user-provided and AI-generated content is sanitized before DOM injection:
 
 ### Layer 3: API Key Handling
 
-| Platform         | Strategy                                                            |
-| ---------------- | ------------------------------------------------------------------- |
-| Web (current)    | Header-based auth (`x-goog-api-key`); CSP mitigates XSS-based theft |
-| Desktop (future) | Electron `safeStorage` encrypted keychain                           |
-| SaaS (future)    | Server-side key management via Firebase Cloud Functions             |
-| Mobile (future)  | Platform-specific secure storage (Keychain / Keystore)              |
+| Platform        | Strategy                                                            |
+| --------------- | ------------------------------------------------------------------- |
+| Web (current)   | Header-based auth (`x-goog-api-key`); CSP mitigates XSS-based theft |
+| Desktop (Tauri) | `CredentialVault.js` with AES-GCM encryption via Web Crypto API     |
+| SaaS (future)   | Server-side key management via Firebase Cloud Functions             |
+| Mobile (future) | Platform-specific secure storage (Keychain / Keystore)              |
 
-### Virtual Team (10 Roles)
+### Virtual Team (14 Roles — 13 AI + 1 Human)
 
 The `WorkflowPromptGenerator._buildVirtualTeam()` function generates role definitions for:
 
-| Role               | Focus Area                                    | Processing Level |
-| ------------------ | --------------------------------------------- | ---------------- |
-| Orchestrator (COO) | Task sequencing, milestone tracking           | Standard         |
-| CTO                | Architecture, framework, technical strategy   | Deep-Reasoning   |
-| Creative Director  | Visual identity, design system, accessibility | Standard         |
-| Front-End Agent    | UI implementation, user journeys              | Standard         |
-| Backend Agent      | APIs, data models, security rules             | Standard         |
-| Sentinel           | Security specialist, OWASP, threat modeling   | Deep-Reasoning   |
-| Research Agent     | Tech investigation, trade-off analysis        | Standard         |
-| Documenter         | README, API docs, changelogs                  | Standard         |
-| Devil's Advocate   | QA, architecture stress-testing               | Deep-Reasoning   |
-| Auditors           | Token/API cost tracking, project health       | Efficient        |
+| Role               | Focus Area                                         | Processing Level | Reports To |
+| ------------------ | -------------------------------------------------- | ---------------- | ---------- |
+| CEO (User)         | Product visionary, decision authority              | Human            | —          |
+| COO (Orchestrator) | Task sequencing, milestone tracking                | Standard         | CEO        |
+| CTO                | Architecture, framework, technical strategy        | Deep-Reasoning   | CEO        |
+| CFO                | Cost/budget tracking, ROI analysis                 | Standard         | CTO        |
+| Frontend UI/UX     | Visual identity, design system + UI implementation | Standard         | COO        |
+| Backend Agent      | APIs, data models, security rules                  | Standard         | CTO        |
+| DevOps Architect   | CI/CD, deployment, infrastructure                  | Standard         | COO        |
+| Deep Researcher    | In-depth investigation, evidence gathering         | Standard         | CTO        |
+| QA / Test Engineer | Testing, validation, regression checks             | Standard         | COO        |
+| Devil's Advocate   | Quality champion, challenges methods & results     | Standard         | COO        |
+| Sentinel           | Security specialist, OWASP, threat modeling        | Deep-Reasoning   | CTO        |
+| Documenter         | README, API docs, changelogs                       | Efficient        | COO        |
+| Token Auditor      | Per-message token counting                         | Efficient        | CFO        |
+| API Cost Auditor   | API cost tracking, budget enforcement              | Efficient        | CFO        |
+| Project Auditor    | Retrospectives, project health                     | Efficient        | COO        |
 
 Each role carries an internal `_routing` hint in the generated prompt. The underscore prefix signals that this is agent-internal metadata, not user-facing information.
 
@@ -397,6 +417,8 @@ Shapes are applied via CSS classes (`shape-<id>`) on `.mind-node` elements:
 
 ## File Structure
 
+> **55 source files** across **20 directories** under `src/` (as of latest audit).
+
 ```
 d:\AI_Dev\mindmapper\
 ├── index.html                           # App shell, toolbar, SVG defs, modals
@@ -404,10 +426,11 @@ d:\AI_Dev\mindmapper\
 ├── vite.config.js                       # Vite dev server config
 ├── Orchistrator.md                      # Reference: original orchestration prompt
 ├── src/
-│   ├── main.js                          # App entry, keyboard shortcuts, state orchestration
+│   ├── main.js                          # App entry, keyboard shortcuts, state orchestration (~870 LOC)
 │   ├── core/
 │   │   ├── EventBus.js                  # Pub/sub for decoupled communication
-│   │   └── History.js                   # Undo/redo with deep-clone snapshots
+│   │   ├── History.js                   # Undo/redo with deep-clone snapshots
+│   │   └── Sanitize.js                  # escapeHtml, sanitizeHtml, escapeAttr
 │   ├── viewport/
 │   │   └── Viewport.js                  # Pan, zoom, grid, coordinate transforms
 │   ├── nodes/
@@ -417,11 +440,38 @@ d:\AI_Dev\mindmapper\
 │   ├── ai/
 │   │   ├── IdeaGenerator.js             # Multi-provider LLM: concept → mind map nodes
 │   │   └── ModelTierConfig.js           # Tiered model routing strategy definition
+│   ├── agents/
+│   │   ├── index.js                     # Agent framework barrel export
+│   │   ├── AgentBase.js                 # Base class for all agent roles
+│   │   ├── AgentRegistry.js             # Role registry (13 AI + 1 human CEO)
+│   │   ├── COOAgent.js                  # COO planning & coordination agent
+│   │   ├── SpecialistAgents.js          # CTO, CFO, DevOps, QA, etc.
+│   │   ├── ExecutionEngine.js           # Round-based multi-agent execution (wraps OrchestrationEngine)
+│   │   ├── ContextManager.js            # Shared context across agent rounds
+│   │   ├── CostTracker.js               # Per-session and cumulative cost tracking
+│   │   ├── MessageBus.js                # Inter-agent message passing
+│   │   └── prompts/
+│   │       └── AgentPrompts.js          # Agent-specific system prompts
 │   ├── export/
 │   │   ├── MindMapSerializer.js         # Canvas → structured data extraction
-│   │   └── WorkflowPromptGenerator.js   # Structured data → Claude Code orchestration prompt
+│   │   └── WorkflowPromptGenerator.js   # Structured data → agent orchestration prompt
+│   ├── orchestration/
+│   │   ├── OrchestrationEngine.js       # Session lifecycle: state machine, bridge selection, persistence
+│   │   ├── BrowserAgentBridge.js        # Browser-mode: direct AI API streaming (Anthropic/OpenAI)
+│   │   ├── ClaudeCodeBridge.js          # Desktop-mode: Claude Code CLI via Tauri shell
+│   │   ├── EnvironmentDetector.js       # Tauri vs. browser environment detection
+│   │   └── SessionStore.js              # Session persistence to localStorage/Firestore
+│   ├── prompts/
+│   │   └── ReportPrompts.js             # CEO report prompt templates + map summarizer
+│   ├── security/
+│   │   └── CredentialVault.js           # AES-GCM encrypted API key storage
 │   ├── validation/
 │   │   └── MindMapValidator.js          # Mind map readiness checks
+│   ├── integrations/
+│   │   ├── ConnectionTester.js          # API connection health checks
+│   │   └── MCPConfigGenerator.js        # MCP server configuration generator
+│   ├── settings/
+│   │   └── WorkspaceSettings.js         # User workspace preferences
 │   ├── firebase/
 │   │   ├── config.js                    # Firebase SDK initialization + emulator support
 │   │   ├── auth.js                      # Google Sign-In + session management
@@ -435,14 +485,16 @@ d:\AI_Dev\mindmapper\
 │   │   ├── MiniMap.js                   # Overview minimap with click-to-navigate
 │   │   ├── FileMenu.js                  # File dropdown menu + keyboard shortcuts
 │   │   ├── PresetModal.js               # Template picker modal with previews
-│   │   ├── AgentPanel.js                # Collapsible agent conversation sidebar
+│   │   ├── AgentPanel.js                # Collapsible agent conversation sidebar (~1200 LOC)
+│   │   ├── AgentStatusDisplay.js        # Agent roster readout panel
+│   │   ├── CommerceNodeConfig.js        # Commerce credential configuration UI
 │   │   ├── IdeaInputModal.js            # AI idea generation modal (concept input + provider select)
 │   │   └── PromptExportModal.js         # Workflow prompt preview, copy, download
 │   ├── storage/
 │   │   ├── Storage.js                   # localStorage adapter with debounced auto-save
 │   │   └── FileManager.js              # File I/O: new/open/save/export/import
 │   ├── import/
-│   │   └── ReferenceImporter.js         # Convert .md/.txt/.img/.doc → mind map nodes
+│   │   └── ReferenceImporter.js         # Convert .md/.txt/.img/.doc → mind map nodes (placeholder)
 │   ├── presets/
 │   │   ├── PresetManager.js             # Built-in + custom preset management
 │   │   └── builtinPresets.js            # 6 project template definitions
@@ -450,9 +502,12 @@ d:\AI_Dev\mindmapper\
 │       └── main.css                     # Complete design system (PCB/circuit board theme)
 └── docs/
     ├── architecture.md                  # This file — system architecture
+    ├── audit-report.md                  # Deep code audit findings
     ├── changelog.md                     # Feature changelog
     ├── implementation_plan.md           # Phase 1 implementation plan
     ├── phase3_plan.md                   # Phase 3 detailed plan
+    ├── Jinn_mindmapper-RoadMap..md      # Jinn-specific roadmap items
+    ├── MASTER_TASK_LIST.md              # Comprehensive task tracker
     └── tech-journal.md                  # Chronological decision log
 ```
 

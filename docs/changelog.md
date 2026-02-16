@@ -4,6 +4,61 @@ All notable changes to this project are documented here.
 
 ---
 
+## Agent Roster Alignment — Creative Director Merge (2026-02-09)
+
+### 🔀 Creative Director → Frontend UI/UX Merge
+
+- **`CreativeDirectorAgent` removed** as a standalone class — design responsibilities merged into `FrontendAgent`
+- **`FrontendAgent` renamed** to **Frontend UI/UX** (`displayName: 'Frontend UI/UX'`, icon: 🎨)
+- Frontend now covers both **design authority** (visual system, typography, motion, brand guard) and **implementation** (code, components, responsive)
+- `modelTier` remains `standard`
+
+### 🗑️ CEO Agent Removed
+
+- CEO is explicitly the **human user**, not an AI agent
+- Removed `ceo` from `DEFAULT_TIER_MAP` in `AgentBase.js`
+
+### 📊 Reporting Hierarchy Formalized in Code
+
+- Added `reportsTo` getter on `AgentBase` (defaults to `null`)
+- `TokenAuditorAgent.reportsTo` → `'cfo'`
+- `ApiCostAuditorAgent.reportsTo` → `'cfo'`
+- `ProjectAuditorAgent.reportsTo` → `'coo'` (was incorrectly `'cfo'`)
+- `AgentRegistry.ROLE_CONFIG` updated: frontend `reportsTo: 'coo'`, design capabilities merged
+
+### 📁 Files Modified
+
+- `src/agents/SpecialistAgents.js` — `CreativeDirectorAgent` removed, `FrontendAgent` enhanced
+- `src/agents/AgentBase.js` — Tier map cleaned, `reportsTo` getter added
+- `src/agents/AgentRegistry.js` — `creative` role removed, frontend capabilities expanded
+- `src/agents/prompts/AgentPrompts.js` — Creative prompt merged into Frontend prompt
+- `src/agents/COOAgent.js` — Team roster and local plan example updated
+- `src/agents/index.js` — Barrel export updated
+- `src/nodes/NodeManager.js` — `AGENT_ROLES` consolidated
+- `src/main.js` — Display names map updated
+
+### 📋 Final Roster (14 roles — 13 AI + 1 Human)
+
+| Role                  | Tier     | Reports To |
+| --------------------- | -------- | ---------- |
+| 🧑‍💼 CEO (Human)        | —        | —          |
+| 🏗️ CTO                | opus     | CEO        |
+| 💰 CFO                | standard | CTO        |
+| 👔 COO                | standard | CEO        |
+| 🎨 Frontend UI/UX     | standard | COO        |
+| ⚙️ Backend            | standard | CTO        |
+| 🚀 DevOps Architect   | standard | COO        |
+| 📚 Deep Researcher    | standard | CTO        |
+| 🧪 QA / Test Engineer | standard | COO        |
+| 😈 Devil's Advocate   | standard | COO        |
+| 🛡️ Sentinel           | opus     | CTO        |
+| 📝 Documenter         | flash    | COO        |
+| 🔢 Token Auditor      | flash    | CFO        |
+| 💵 API Cost Auditor   | flash    | CFO        |
+| 📊 Project Auditor    | flash    | COO        |
+
+---
+
 ## Phase 6 — Agent Organizational Structure & Communication Protocol (2026-02-08)
 
 ### 🏢 Expanded Agent Roster (10 → 15 Roles)
@@ -26,28 +81,19 @@ All notable changes to this project are documented here.
 **Reporting structure established:**
 
 ```
-                     CEO (Human)
-                        │
-                     COO (Hub)
-               ┌────┬───┼───┬──────────┐
-               │    │   │   │          │
-            Devil's DevOps QA   Documenter
-           Advocate              │
-               │                 │ retrospective
-               ▼                 ▼ findings
-     COO creates         ┌─────────────┐
-     agent-specific      │     CTO     │
-     task lists          │  (Tech Hub) │
-                         ├──┬──────┬───┤
-                         │  │      │
-                       CFO Sentinel Deep
-                         │         Researcher
-                    ┌────┤
-                    │    │
-              Token  API Cost
-              Auditor Auditor
-                    │
-              Project Auditor → Executive Suite
+                       CEO (Human)
+                    ┌─────┴─────┐
+                    │           │
+                 COO (Hub)   CTO (Tech Hub)
+          ┌──┬──┬──┼──┬───┐    ├──┬───────┬───┐
+          │  │  │  │  │   │    │  │       │   │
+      Frontend DA DevOps QA Doc  CFO  Sentinel Deep
+      UI/UX              │      │            Researcher
+                   Proj. Auditor│
+                         ┌──────┤
+                         │      │
+                       Token  API Cost
+                       Auditor Auditor
 ```
 
 ### 🔄 Inter-Agent Communication Protocol
@@ -68,7 +114,7 @@ All notable changes to this project are documented here.
 - **Quality improvement push** across ALL aspects: code, design, architecture, security, performance, documentation
 - **Quality standards enforced:**
   - Code: Clean, readable, maintainable, well-structured
-  - Design: Meets Creative Director standards, accessible, responsive
+  - Design: Meets Frontend UI/UX design system standards, accessible, responsive
   - Architecture: Scalable, testable, well-separated
   - Performance: Fast load, no unnecessary re-renders, efficient queries
   - Documentation: Complete, accurate, onboarding-ready
@@ -274,22 +320,23 @@ All notable changes to this project are documented here.
   - Philosophy: "Never bring a bazooka to a pillow fight"
   - Routing metadata is consumed by the executing agent, invisible to MindMapper users
 
-### 👥 Phase 3.7 — Full 15-Role Virtual Team + Invisible Routing
+### 👥 Phase 3.7 — Full 14-Role Virtual Team + Invisible Routing
 
-- **Virtual Team Expansion** — `_buildVirtualTeam()` now generates 15 agent roles (expanded from original 5):
+- **Virtual Team Expansion** — `_buildVirtualTeam()` now generates 14 agent roles (expanded from original 5; Creative Director later merged into Frontend UI/UX):
   - 👔 **Orchestrator (COO)** — task board, milestone sequencing (standard routing)
   - 🏗️ **CTO** — architecture decisions, framework selection (deep-reasoning routing)
   - 💰 **CFO** — budget strategy, creative cost optimization (standard routing)
-  - 🎨 **Creative Director / Art Department** — visual identity, design system, branding, accessibility (standard routing)
-  - 🖥️ **Front-End Agent** — UI implementation, user journeys, responsive layout (standard routing)
+  - 🎨 **Frontend UI/UX** — visual identity, design system + UI implementation, responsive layout (standard routing)
   - ⚙️ **Backend Agent** — APIs, data models, security rules (standard routing)
-  - 🚀 **DevOps Agent** — CI/CD, deployment, infrastructure-as-code (standard routing)
-  - 🧪 **QA / Test Agent** — test strategy, unit/integration/e2e tests (standard routing)
+  - 🚀 **DevOps Architect** — CI/CD, deployment, infrastructure-as-code (standard routing)
+  - 🧪 **QA / Test Engineer** — test strategy, unit/integration/e2e tests (standard routing)
   - 📚 **Deep Researcher / Knowledge Architect** — API docs, reference material, knowledge base (standard routing)
   - 🛡️ **Sentinel** — dedicated security specialist, OWASP, threat modeling (deep-reasoning routing)
-  - 😈 **Devil's Advocate** — QA challenger, architecture stress-testing, quality champion (deep-reasoning routing)
-  - 📝 **Documenter** — README, API docs, changelogs, migration guides (standard routing)
-  - 🔢 **Auditors** — token/API cost tracking, project health, retrospective (efficient routing)
+  - 😈 **Devil's Advocate** — QA challenger, architecture stress-testing, quality champion (standard routing)
+  - 📝 **Documenter** — README, API docs, changelogs, migration guides (efficient routing)
+  - 🔢 **Token Auditor** — per-message token counting (efficient routing)
+  - 💵 **API Cost Auditor** — API cost tracking, budget enforcement (efficient routing)
+  - 📊 **Project Auditor** — retrospectives, project health (efficient routing)
 - **Invisible Routing Metadata** — All tier-specific fields renamed:
   - `model_tier` → `_routing` (underscore-prefixed internal convention)
   - `tier_rationale` → `_rationale`
