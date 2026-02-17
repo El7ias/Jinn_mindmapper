@@ -54,6 +54,7 @@ export class FileManager {
   }
 
   openFile() {
+    document.body.appendChild(this._openInput);
     this._openInput.click();
   }
 
@@ -209,6 +210,7 @@ export class FileManager {
   // ═════════════════════════════════════
 
   importReference() {
+    document.body.appendChild(this._importInput);
     this._importInput.click();
   }
 
@@ -276,9 +278,10 @@ export class FileManager {
     input.type = 'file';
     input.accept = accepts.join(',');
     input.style.display = 'none';
-    document.body.appendChild(input);
+    // Not appended to body here — appended temporarily in openFile()/importReference()
     input.addEventListener('change', () => {
       const file = input.files?.[0];
+      input.remove(); // remove from DOM after use
       if (!file) return;
       input.value = ''; // reset for re-use
 

@@ -9,6 +9,7 @@
  *  • Hover bridge with delay so the submenu doesn't close when crossing a gap
  */
 import { NODE_SHAPES, NODE_TYPES, PRIORITY_LEVELS, AGENT_ROLES, COMMERCE_NODE_TYPES, COMMERCE_CATEGORIES } from '../nodes/NodeManager.js';
+import { escapeHtml } from '../core/Sanitize.js';
 
 export class ContextMenu {
   constructor(bus, nodeManager, connectionManager, viewport) {
@@ -276,7 +277,7 @@ export class ContextMenu {
     // ─── Submenu trigger (opens a floating panel on hover) ───
     if (item.chevron && item.submenuId) {
       li.className = 'menu-submenu-trigger';
-      li.innerHTML = `<span>${item.label}</span><span class="submenu-arrow">›</span>`;
+      li.innerHTML = `<span>${escapeHtml(item.label)}</span><span class="submenu-arrow">›</span>`;
 
       li.addEventListener('mouseenter', () => {
         this._cancelSubmenuClose();
@@ -291,7 +292,7 @@ export class ContextMenu {
     }
 
     // ─── Normal clickable item ───
-    li.innerHTML = `<span>${item.label}</span>${item.shortcut ? `<span class="shortcut">${item.shortcut}</span>` : ''}`;
+    li.innerHTML = `<span>${escapeHtml(item.label)}</span>${item.shortcut ? `<span class="shortcut">${escapeHtml(item.shortcut)}</span>` : ''}`;
     if (item.className) li.classList.add(item.className);
 
     li.addEventListener('click', () => {
@@ -366,7 +367,7 @@ export class ContextMenu {
 
       types.forEach(t => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${t.icon} ${t.label}</span>`;
+        li.innerHTML = `<span>${escapeHtml(t.icon + ' ' + t.label)}</span>`;
         li.addEventListener('click', () => {
           this.hide();
           this.nodeManager.createNode(this._clickWorld.x - 70, this._clickWorld.y - 20, {

@@ -252,7 +252,7 @@ export class AgentBase {
       // BrowserAgentBridge emits: { type: 'text', content: '...', sessionId }
       const progressUnsub = this._bus.on('orchestration:progress', (data) => {
         // Filter by sessionId when available
-        if (activeSessionId && data?.sessionId && data.sessionId !== activeSessionId) return;
+        if (activeSessionId && data?.sessionId !== activeSessionId) return;
 
         if (data?.type === 'text' && typeof data.content === 'string') {
           responseText += data.content;
@@ -276,14 +276,14 @@ export class AgentBase {
 
       // Listen for completion
       const completeUnsub = this._bus.on('orchestration:complete', (data) => {
-        if (activeSessionId && data?.sessionId && data.sessionId !== activeSessionId) return;
+        if (activeSessionId && data?.sessionId !== activeSessionId) return;
         cleanup();
         resolve({ text: responseText, tokens });
       });
 
       // Listen for errors
       const errorUnsub = this._bus.on('orchestration:error', (data) => {
-        if (activeSessionId && data?.sessionId && data.sessionId !== activeSessionId) return;
+        if (activeSessionId && data?.sessionId !== activeSessionId) return;
         cleanup();
         reject(new Error(data?.message || 'Agent API call failed'));
       });

@@ -45,7 +45,7 @@ export class PropertyPanel {
       if (node) {
         node.text = this.textInput.value;
         node.el.querySelector('.node-text').textContent = node.text;
-        this.bus.emit('node:updated', node);
+        // Live DOM update only; state:changed deferred to 'change' event (CLEAN-03)
       }
     });
 

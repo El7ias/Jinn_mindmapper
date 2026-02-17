@@ -11,8 +11,6 @@
  *   - metrics: message count, error count, elapsed time
  */
 
-import { EnvironmentDetector } from './EnvironmentDetector.js';
-
 const STORE_NAME = 'mindmapper-sessions.json';
 const MAX_SESSIONS = 50;
 const LS_KEY = 'mindmapper_sessions';
@@ -105,14 +103,9 @@ export class SessionStore {
     if (this._cache) return this._cache;
 
     try {
-      if (EnvironmentDetector.isTauri) {
-        const { invoke } = await import('@tauri-apps/api/core');
-        const result = await invoke('get_api_key', { provider: '_sessions' });
-        this._cache = result.key ? JSON.parse(result.key) : [];
-      } else {
-        const raw = localStorage.getItem(LS_KEY);
-        this._cache = raw ? JSON.parse(raw) : [];
-      }
+      // Use localStorage for both browser and Tauri (avoids hijacking API-key Tauri commands)
+      const raw = localStorage.getItem(LS_KEY);
+      this._cache = raw ? JSON.parse(raw) : [];
     } catch {
       this._cache = [];
     }
@@ -123,15 +116,8 @@ export class SessionStore {
   /** @param {Array} sessions */
   async _persist(sessions) {
     try {
-      if (EnvironmentDetector.isTauri) {
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('set_api_key', {
-          provider: '_sessions',
-          key: JSON.stringify(sessions),
-        });
-      } else {
-        localStorage.setItem(LS_KEY, JSON.stringify(sessions));
-      }
+      // Use localStorage for both browser and Tauri (BUG-03b fix)
+      localStorage.setItem(LS_KEY, JSON.stringify(sessions));
     } catch (e) {
       console.error('SessionStore: failed to persist sessions', e);
     }

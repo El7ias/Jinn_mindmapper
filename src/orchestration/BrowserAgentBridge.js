@@ -77,9 +77,16 @@ export class BrowserAgentBridge {
     this._sessionId = null;
     this._provider = PROVIDER.ANTHROPIC;
 
+    // Credential vault + in-memory key cache (SEC-01)
+    this._vault = null;
+    this._apiKeyCache = {};
+
     // Cost tracking
     this._sessionUsage = { inputTokens: 0, outputTokens: 0, model: null };
     this._costHistory = this._loadCostHistory();
+
+    // Load encrypted keys whenever the vault unlocks
+    this._bus.on('vault:unlocked', () => this._loadKeysFromVault());
   }
 
   /* ─── Public API (mirrors ClaudeCodeBridge) ────────────────────── */
@@ -191,10 +198,24 @@ export class BrowserAgentBridge {
   }
 
   /**
-   * Store an API key for a provider in localStorage.
+   * Associate a CredentialVault instance for encrypted key storage.
    */
-  setApiKey(provider, key) {
-    localStorage.setItem(`mindmapper_api_key_${provider}`, key);
+  setVault(vault) {
+    this._vault = vault;
+  }
+
+  /**
+   * Store an API key for a provider.
+   * Uses the CredentialVault (AES-GCM) when unlocked; falls back to localStorage.
+   */
+  async setApiKey(provider, key) {
+    this._apiKeyCache[provider] = key;
+    if (this._vault?.isUnlocked) {
+      await this._vault.store(`ai_key_${provider}`, { key });
+      localStorage.removeItem(`mindmapper_api_key_${provider}`);
+    } else {
+      localStorage.setItem(`mindmapper_api_key_${provider}`, key);
+    }
   }
 
   /**
@@ -214,19 +235,37 @@ export class BrowserAgentBridge {
   /* ─── Private ──────────────────────────────────────────────────── */
 
   _getApiKey(provider) {
-    // Check bridge's own key first
+    // Check in-memory cache first (populated by vault or setApiKey)
+    if (this._apiKeyCache[provider]) return this._apiKeyCache[provider];
+
+    // Fallback: check localStorage (plaintext, pre-vault keys)
     const bridgeKey = localStorage.getItem(`mindmapper_api_key_${provider}`);
     if (bridgeKey) return bridgeKey;
 
     // Fallback: check the IdeaInputModal key format (mm_ai_key_)
     const ideaKey = localStorage.getItem(`mm_ai_key_${provider}`);
     if (ideaKey) {
-      // Migrate to unified key so future lookups hit the primary check
-      localStorage.setItem(`mindmapper_api_key_${provider}`, ideaKey);
+      // Migrate into cache so future lookups are fast
+      this._apiKeyCache[provider] = ideaKey;
       return ideaKey;
     }
 
     return '';
+  }
+
+  /**
+   * Load API keys from vault into the in-memory cache, and remove plaintext copies.
+   * Called automatically when vault:unlocked is emitted.
+   */
+  async _loadKeysFromVault() {
+    if (!this._vault?.isUnlocked) return;
+    for (const provider of [PROVIDER.ANTHROPIC, PROVIDER.OPENAI]) {
+      const creds = await this._vault.retrieve(`ai_key_${provider}`);
+      if (creds?.key) {
+        this._apiKeyCache[provider] = creds.key;
+        localStorage.removeItem(`mindmapper_api_key_${provider}`);
+      }
+    }
   }
 
   /**

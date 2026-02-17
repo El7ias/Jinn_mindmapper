@@ -118,6 +118,7 @@ class MindMapperApp {
 
     // Phase 8 — Credential Vault + Commerce Node Config Panel + Connection Tester
     this.credentialVault = new CredentialVault(this.bus);
+    this.orchestrationEngine.browserBridge.setVault(this.credentialVault);
     this.connectionTester = new ConnectionTester(this.bus, this.credentialVault);
     this.commerceNodeConfig = new CommerceNodeConfig(this.bus, this.nodeManager, this.credentialVault, this.connectionTester);
 
@@ -207,14 +208,14 @@ class MindMapperApp {
         if (!EnvironmentDetector.isTauri) {
           const hasKey = this.orchestrationEngine.hasBrowserApiKey();
           if (!hasKey) {
-            const key = prompt(
-              `Running "${label}" requires an API key.\n\n` +
-              'Enter your Anthropic API key:\n' +
-              '(Get one at console.anthropic.com)\n' +
-              'Your key is stored locally and never sent to our servers.'
+            const key = await this._promptSecureInput(
+              `Running "<b>${label}</b>" requires an Anthropic API key.` +
+              '<br><br>Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>' +
+              '<br>Your key is stored securely and never sent to our servers.',
+              'sk-ant-...'
             );
             if (!key) return;
-            this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
+            await this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
           }
         }
 
@@ -338,9 +339,6 @@ class MindMapperApp {
 
     // Load saved state
     this._loadState();
-
-    // Push initial history state
-    this.history.push(this._getState());
 
     // App initialized
   }
@@ -541,13 +539,14 @@ class MindMapperApp {
     if (!EnvironmentDetector.isTauri) {
       const hasKey = this.orchestrationEngine.hasBrowserApiKey();
       if (!hasKey) {
-        const key = prompt(
-          'Enter your Anthropic API key to run agents from the browser:\n\n' +
-          '(Get one at console.anthropic.com)\n' +
-          'Your key is stored locally and never sent to our servers.'
+        const key = await this._promptSecureInput(
+          'Enter your Anthropic API key to run agents from the browser.' +
+          '<br><br>Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>' +
+          '<br>Your key is stored securely and never sent to our servers.',
+          'sk-ant-...'
         );
         if (!key) return;
-        this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
+        await this.orchestrationEngine.browserBridge.setApiKey('anthropic', key.trim());
       }
     }
 
@@ -832,10 +831,11 @@ class MindMapperApp {
     }
 
     // Prompt to unlock vault if needed
-    if (!this.credentialVault.isUnlocked() && this.credentialVault.hasVault()) {
-      const passphrase = prompt(
-        'Your credential vault is locked.\n' +
-        'Enter your vault passphrase to decrypt credentials for the config export:'
+    if (!this.credentialVault.isUnlocked && this.credentialVault.hasVault) {
+      const passphrase = await this._promptSecureInput(
+        'Your credential vault is locked.' +
+        '<br>Enter your vault passphrase to decrypt credentials for the config export.',
+        'Passphrase…'
       );
       if (passphrase) {
         const ok = await this.credentialVault.unlock(passphrase);
@@ -884,6 +884,41 @@ class MindMapperApp {
         'Paste the config into your **Claude Code MCP server settings** ' +
         'or import the downloaded JSON file into your AI agent platform.',
       timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Show a secure password-input modal instead of window.prompt() for sensitive values.
+   * @param {string} message  — HTML message to display above the input
+   * @param {string} [placeholder]
+   * @returns {Promise<string|null>} — the entered value, or null if cancelled
+   */
+  _promptSecureInput(message, placeholder = '') {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = `
+        <div style="background:#0d1117;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:24px;width:420px;max-width:90vw;box-shadow:0 24px 64px rgba(0,0,0,.8);">
+          <p style="margin:0 0 16px;color:#e6edf3;font-size:13px;line-height:1.55;">${message}</p>
+          <input type="password" id="_sec-input" style="width:100%;box-sizing:border-box;padding:10px 12px;background:#0a0a14;border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#e6edf3;font-size:13px;outline:none;" placeholder="${placeholder}" autocomplete="off" />
+          <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+            <button id="_sec-cancel" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#8b949e;cursor:pointer;font-size:13px;">Cancel</button>
+            <button id="_sec-ok" style="padding:8px 16px;background:#00e5ff;border:none;border-radius:6px;color:#0d1117;cursor:pointer;font-size:13px;font-weight:600;">OK</button>
+          </div>
+        </div>`;
+
+      const input = overlay.querySelector('#_sec-input');
+      const finish = (value) => { overlay.remove(); resolve(value); };
+
+      overlay.querySelector('#_sec-ok').addEventListener('click', () => finish(input.value.trim() || null));
+      overlay.querySelector('#_sec-cancel').addEventListener('click', () => finish(null));
+      overlay.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.stopPropagation(); finish(input.value.trim() || null); }
+        if (e.key === 'Escape') { e.stopPropagation(); finish(null); }
+      });
+
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => input.focus());
     });
   }
 
