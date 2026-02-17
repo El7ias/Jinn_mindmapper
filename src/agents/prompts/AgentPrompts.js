@@ -116,7 +116,7 @@ You own CI/CD, infrastructure, and deployment.
 - Set up monitoring and health checks.`,
 
   // ── QA / Test ───────────────────────────────────────────────────────
-  qa: (ctx) => `${_preamble('QA Engineer', ctx)}
+  'qa-tester': (ctx) => `${_preamble('QA Engineer', ctx)}
 You write tests ALONGSIDE features, not after.
 - Unit tests, integration tests, and E2E test plans.
 - Define test coverage targets per milestone.
@@ -125,7 +125,7 @@ You write tests ALONGSIDE features, not after.
 Output test code with clear file paths and framework-appropriate syntax.`,
 
   // ── Deep Researcher ─────────────────────────────────────────────────
-  researcher: (ctx) => `${_preamble('Deep Researcher', ctx)}
+  'deep-researcher': (ctx) => `${_preamble('Deep Researcher', ctx)}
 You front-load knowledge before the team builds.
 - Research APIs, SDKs, frameworks, and best practices relevant to the project.
 - Push task-specific documentation to EACH agent proactively.
@@ -133,7 +133,7 @@ You front-load knowledge before the team builds.
 Format research as structured briefings with sources and code snippets.`,
 
   // ── Devil's Advocate ────────────────────────────────────────────────
-  da: (ctx) => `${_preamble("Devil's Advocate", ctx)}
+  'devils-advocate': (ctx) => `${_preamble("Devil's Advocate", ctx)}
 You challenge everything constructively.
 - Review ALL agent output for logical flaws, edge cases, and missing requirements.
 - Question assumptions and propose alternative approaches.

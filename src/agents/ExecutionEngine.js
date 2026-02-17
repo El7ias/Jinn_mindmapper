@@ -19,6 +19,7 @@
  */
 
 import { AgentRegistry } from '../agents/AgentRegistry.js';
+import { createAgent } from '../agents/SpecialistAgents.js';
 import { MessageBus, MSG_TYPE } from '../agents/MessageBus.js';
 import { ContextManager } from '../agents/ContextManager.js';
 import { CostTracker } from '../agents/CostTracker.js';
@@ -108,6 +109,9 @@ export class ExecutionEngine {
     // Clear previous session data
     this._messageBus.clear();
     this._costTracker.reset();
+
+    // Instantiate all specialist agents into the registry
+    this._instantiateAgents();
 
     try {
       // Phase 1: COO creates the execution plan
@@ -331,8 +335,9 @@ export class ExecutionEngine {
           this._messageBus.getAll()
         );
 
-        // Execute via agent
-        const result = await agentInstance.execute(task, this._messageBus.getAll());
+        // Execute via agent (merge ContextManager output into task)
+        const taskWithContext = { ...task, context: context.systemContext };
+        const result = await agentInstance.execute(taskWithContext, this._messageBus.getAll());
 
         // Record cost
         this._costTracker.record(roleId, agentEntry.config.tier, 'claude-sonnet-4-20250514', result.tokens || { input: 0, output: 0 });
@@ -368,6 +373,26 @@ export class ExecutionEngine {
     });
 
     return roundResults;
+  }
+
+  /**
+   * Instantiate all specialist agents and register them in the registry.
+   * Called at the start of each session to ensure all agents are ready.
+   */
+  _instantiateAgents() {
+    const deps = {
+      bus: this._bus,
+      bridge: this._bridge,
+      projectContext: this._projectContext,
+    };
+    for (const entry of this._registry.getExecutable()) {
+      const roleId = entry.role.id;
+      if (roleId === 'coo') continue; // COO is handled via startSession opts
+      const instance = createAgent(roleId, deps);
+      if (instance) {
+        this._registry.registerInstance(roleId, instance);
+      }
+    }
   }
 
   /**

@@ -225,7 +225,7 @@ export class DevOpsAgent extends AgentBase {
 // ═════════════════════════════════════════════════════════════════════════
 
 export class QAAgent extends AgentBase {
-  get roleId() { return 'qa'; }
+  get roleId() { return 'qa-tester'; }
   get displayName() { return 'QA Engineer'; }
 
   buildTaskPrompt(task) {
@@ -257,7 +257,7 @@ export class QAAgent extends AgentBase {
 // ═════════════════════════════════════════════════════════════════════════
 
 export class ResearcherAgent extends AgentBase {
-  get roleId() { return 'researcher'; }
+  get roleId() { return 'deep-researcher'; }
   get displayName() { return 'Deep Researcher'; }
 
   buildTaskPrompt(task) {
@@ -289,7 +289,7 @@ export class ResearcherAgent extends AgentBase {
 // ═════════════════════════════════════════════════════════════════════════
 
 export class DevilsAdvocateAgent extends AgentBase {
-  get roleId() { return 'da'; }
+  get roleId() { return 'devils-advocate'; }
   get displayName() { return "Devil's Advocate"; }
 
   buildTaskPrompt(task) {
@@ -427,9 +427,9 @@ const AGENT_CLASS_MAP = {
   frontend:         FrontendAgent,
   backend:          BackendAgent,
   devops:           DevOpsAgent,
-  qa:               QAAgent,
-  researcher:       ResearcherAgent,
-  da:               DevilsAdvocateAgent,
+  'qa-tester':      QAAgent,
+  'deep-researcher': ResearcherAgent,
+  'devils-advocate': DevilsAdvocateAgent,
   sentinel:         SentinelAgent,
   documenter:       DocumenterAgent,
   'token-auditor':  TokenAuditorAgent,
